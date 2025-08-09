@@ -6,10 +6,14 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#ffb3ba">
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+  <link rel="apple-touch-icon" href="./icon-192.png">
   <title>Just One Helper</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Nova+Mono&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+Mono+TC&display=swap" rel="stylesheet">
   <style>
     * {
       box-sizing: border-box;
@@ -22,7 +26,7 @@
       width: 100%;
       overflow: hidden;
       background: #f8f9fa;
-      font-family: "Nova Mono", monospace;
+      font-family: "LXGW WenKai Mono TC", monospace;
       -webkit-user-select: none;
       user-select: none;
       position: fixed;
@@ -65,7 +69,7 @@
     }
     
     button {
-      font-family: "Nova Mono", monospace;
+      font-family: "LXGW WenKai Mono TC", monospace;
       font-size: 1.5rem;
       padding: 1rem 2rem;
       border: none;
@@ -92,7 +96,7 @@
       align-items: center;
       text-align: center;
       color: #2c3e50;
-      font-family: "Nova Mono", monospace;
+      font-family: "LXGW WenKai Mono TC", monospace;
       line-height: 1.1;
       overflow: hidden;
       position: absolute;
@@ -135,7 +139,7 @@
     }
     
     #clueField {
-      font-family: "Nova Mono", monospace;
+      font-family: "LXGW WenKai Mono TC", monospace;
       font-size: 1.5rem;
       width: 100%;
       height: 100%;
@@ -168,6 +172,11 @@
     
     #submitBtn:hover, #submitBtn:active {
       background: #ffc9c9;
+    }
+
+    #wordInner,
+    #clueInner {
+      font-weight: 900;
     }
     
     /* Back Button */
@@ -241,7 +250,7 @@
       </div>
     </div>
 
-    <button id="backBtn">←</button>
+    <button id="backBtn" class="hidden">←</button>
     <button id="fsBtn" title="Toggle Fullscreen">⛶</button
   </div>
 
@@ -371,25 +380,31 @@
       setTimeout(() => clueField.focus(), 10);
     };
 
-    // Allow only letters in clue field
+    // Allow only letters in clue field (any language)
     clueField.addEventListener('keydown', (e) => {
       // Allow: backspace, delete, tab, escape, enter, arrow keys
       if ([8, 9, 27, 13, 37, 38, 39, 40, 46].includes(e.keyCode) ||
-          // Allow Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X, Ctrl+Z
-          (e.ctrlKey === true && [65, 67, 86, 88, 90].includes(e.keyCode))) {
+          // Allow Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X, Ctrl+Z, Cmd+A, Cmd+C, Cmd+V, Cmd+X, Cmd+Z
+          (e.ctrlKey === true && [65, 67, 86, 88, 90].includes(e.keyCode)) ||
+          (e.metaKey === true && [65, 67, 86, 88, 90].includes(e.keyCode))) {
         return;
       }
       
-      // Prevent if not a letter
+      // For non-ASCII characters, let the input event handle the filtering
+      if (e.keyCode > 127) {
+        return;
+      }
+      
+      // Prevent if not a letter (for ASCII characters)
       const char = String.fromCharCode(e.keyCode);
-      if (!/^[a-zA-ZάέήίόύώΆΈΉΊΌΎΏαβγδεζηθικλμνξοπρστυφχψωΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩ]$/.test(char)) {
+      if (!/^[a-zA-Z]$/.test(char)) {
         e.preventDefault();
       }
     });
     
     clueField.addEventListener('input', (e) => {
-      // Remove any non-letter characters that might have been pasted
-      e.target.value = e.target.value.replace(/[^a-zA-ZάέήίόύώΆΈΉΊΌΎΏαβγδεζηθικλμνξοπρστυφχψωΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩ]/g, '');
+      // Remove any non-letter characters (supports all Unicode letters)
+      e.target.value = e.target.value.replace(/[^\p{L}]/gu, '');
     });
 
     // Clue form submission
@@ -432,6 +447,37 @@
         if (currentView === 'clue') fitText(clueInner);
       }, 100);
     });
+
+    // PWA Service Worker Registration
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(registration => {
+            console.log('SW registered: ', registration);
+            
+            // Check for updates
+            registration.addEventListener('updatefound', () => {
+              const newWorker = registration.installing;
+              console.log('New service worker installing');
+              
+              newWorker.addEventListener('statechange', () => {
+                if (newWorker.state === 'installed') {
+                  console.log('New service worker installed, will activate on next visit');
+                }
+              });
+            });
+          })
+          .catch(registrationError => {
+            console.log('SW registration failed: ', registrationError);
+          });
+      });
+      
+      // Handle service worker updates
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        console.log('Service worker updated, reloading page');
+        window.location.reload();
+      });
+    }
 
     // Fullscreen functionality
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
