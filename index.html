@@ -179,6 +179,12 @@
       font-weight: 900;
     }
     
+    /* Blur effect for word text */
+    .blurred {
+      filter: blur(60px);
+      transition: filter 0.3s ease;
+    }
+    
     /* Back Button */
     #backBtn {
       position: fixed;
@@ -312,6 +318,8 @@
     let currentView = 'menu';
     let currentLang = 'en';
     let countdownId = null;
+    let wordBlurred = false;
+    let wordRevealed = false;
 
     // Language picker
     document.querySelectorAll('[name="lang"]').forEach(radio => {
@@ -358,6 +366,8 @@
       let seconds = 2;
       wordInner.textContent = seconds;
       fitText(wordInner);
+      wordRevealed = false;
+      wordBlurred = false;
 
       if (countdownId) clearInterval(countdownId);
       countdownId = setInterval(() => {
@@ -366,12 +376,30 @@
           clearInterval(countdownId);
           countdownId = null;
           wordInner.textContent = currentWord;
+          wordRevealed = true;
         } else {
           wordInner.textContent = seconds;
         }
         fitText(wordInner);
       }, 1000);
     };
+
+    // Word screen tap-to-blur functionality
+    document.getElementById('wordText').addEventListener('click', () => {
+      if (currentView === 'word' && wordRevealed) {
+        wordBlurred = !wordBlurred;
+        if (wordBlurred) {
+          wordInner.classList.add('blurred');
+        } else {
+          wordInner.classList.remove('blurred');
+        }
+        
+        // Haptic feedback
+        if (navigator.vibrate) {
+          navigator.vibrate(50); // Vibrate for 50ms
+        }
+      }
+    });
 
     // Type Clue button
     document.getElementById('btnClue').onclick = () => {
@@ -431,6 +459,10 @@
       if (currentView === 'word') {
         if (!confirm('Leave and lose the word?')) return;
         currentWord = '';
+        // Reset blur state
+        wordBlurred = false;
+        wordRevealed = false;
+        wordInner.classList.remove('blurred');
       }
       show('menu');
     };
