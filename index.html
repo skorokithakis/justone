@@ -87,6 +87,12 @@
       background: #ffc9c9;
     }
     
+    button.disabled {
+      opacity: 0.5;
+      pointer-events: none;
+      cursor: not-allowed;
+    }
+    
     /* Fullscreen Text Views */
     .fullscreenView {
       width: 100%;
@@ -530,6 +536,8 @@
     let hasSubmittedWord = false;
     let lastNewGameTime = null;
     let lastEndRoundTime = null;
+    let wordHolderUUID = null; // Track who has the word
+    let currentUserRole = null; // 'wordHolder' or 'clueGiver' or null
 
     // Language picker
     document.querySelectorAll('[name="lang"]').forEach(radio => {
@@ -568,6 +576,9 @@
     const wordsList = document.getElementById('wordsList');
     const currentWordDisplay = document.getElementById('currentWordDisplay');
     const endRoundBtn = document.getElementById('endRoundBtn');
+    
+    // Initialize button visibility on load
+    updateButtonVisibility();
     
     // Show room modal on load
     setTimeout(() => {
@@ -622,6 +633,9 @@
       
       // Connect to Gweet
       connectToGweet();
+      
+      // Update button visibility after connecting
+      updateButtonVisibility();
     }
     
     // Gweet connection management
@@ -647,6 +661,8 @@
               handleGweetMessage(msg.values);
             }
           });
+          // Update button visibility after processing all historical messages
+          updateButtonVisibility();
         }
         
         // Establish streaming connection
@@ -724,22 +740,27 @@
         // Track timing of new game
         lastNewGameTime = Date.now();
         
-        // New game started by another player
-        if (user !== clientUUID) {
+        // Track who has the word
+        wordHolderUUID = user;
+        
+        // Set current user's role
+        if (user === clientUUID) {
+          currentUserRole = 'wordHolder';
+        } else {
+          currentUserRole = 'clueGiver';
           currentWord = word;
           currentLang = lang || 'en';
           // Update language selector
           document.querySelector(`[name="lang"][value="${currentLang}"]`).checked = true;
-          // Reset submitted words
-          submittedWords = [];
-          hasSubmittedWord = false;
-          updateSubmittedWordsDisplay();
         }
         
-        // Update End Round button visibility on main menu
-        if (currentView === 'menu' && isGameInProgress()) {
-          endRoundBtn.classList.remove('hidden');
-        }
+        // Reset submitted words
+        submittedWords = [];
+        hasSubmittedWord = false;
+        updateSubmittedWordsDisplay();
+        
+        // Update button visibility
+        updateButtonVisibility();
       } else if (type === 'submitWord' && word) {
         // Word submitted by a player
         const submission = { word, user };
@@ -754,11 +775,6 @@
         
         // Round ended by another player
         handleEndRound();
-        
-        // Hide End Round button on main menu
-        if (currentView === 'menu') {
-          endRoundBtn.classList.add('hidden');
-        }
       }
     }
     
@@ -847,6 +863,10 @@
       wordRevealed = false;
       wordBlurred = false;
       
+      // Clear user roles
+      wordHolderUUID = null;
+      currentUserRole = null;
+      
       // Clear any countdown
       if (countdownId) { 
         clearInterval(countdownId); 
@@ -858,24 +878,25 @@
       document.getElementById('wordText').classList.remove('word-blurred');
       submittedWordsDiv.classList.add('hidden');
       
+      // Update button visibility
+      updateButtonVisibility();
+      
       // Return to main menu
       show('menu');
     }
     
     // End Round button handler
     endRoundBtn.addEventListener('click', () => {
-      if (confirm('Are you sure you want to end the current round for everyone?')) {
-        // Track the end round timing
-        lastEndRoundTime = Date.now();
-        
-        // Send endRound message to other players
-        sendGweetMessage({
-          type: 'endRound'
-        });
-        
-        // Handle the end round locally
-        handleEndRound();
-      }
+      // Track the end round timing
+      lastEndRoundTime = Date.now();
+      
+      // Send endRound message to other players
+      sendGweetMessage({
+        type: 'endRound'
+      });
+      
+      // Handle the end round locally
+      handleEndRound();
     });
 
     // View management
@@ -884,20 +905,8 @@
       
       if (view === 'menu') {
         backBtn.classList.add('hidden');
-        // Show End Round button on main menu only if game is in progress
-        if (isGameInProgress()) {
-          endRoundBtn.classList.remove('hidden');
-        } else {
-          endRoundBtn.classList.add('hidden');
-        }
       } else {
         backBtn.classList.remove('hidden');
-        // Show End Round button only on word or clue display views
-        if (view === 'word' || view === 'clue') {
-          endRoundBtn.classList.remove('hidden');
-        } else {
-          endRoundBtn.classList.add('hidden');
-        }
       }
       
       switch(view) {
@@ -907,6 +916,9 @@
         case 'clue': clueDisplay.classList.remove('hidden'); break;
       }
       currentView = view;
+      
+      // Update all button visibility based on current state
+      updateButtonVisibility();
       
       // Update browser history for back button handling
       if (view !== 'menu') {
@@ -939,20 +951,68 @@
       // If there's been a newGame but no endRound after it, game is in progress
       return true;
     }
+    
+    // Update button visibility based on user role and game state
+    function updateButtonVisibility() {
+      const btnWord = document.getElementById('btnWord');
+      const btnClue = document.getElementById('btnClue');
+      
+      if (!isGameInProgress()) {
+        // No game in progress - anyone can start a new game
+        btnWord.classList.remove('disabled');
+        btnClue.classList.add('disabled');
+        endRoundBtn.classList.add('hidden');
+      } else {
+        // Game in progress - show End Round button
+        if (currentView === 'menu' || currentView === 'word' || currentView === 'clue') {
+          endRoundBtn.classList.remove('hidden');
+        }
+        
+        // Check user role for main buttons
+        if (currentUserRole === 'wordHolder') {
+          // Word holder can click "Get Word" to see their word
+          btnWord.classList.remove('disabled');
+          btnClue.classList.add('disabled');
+        } else if (currentUserRole === 'clueGiver') {
+          // Clue giver can click "Type Clue" or see submitted words
+          btnWord.classList.add('disabled');
+          btnClue.classList.remove('disabled');
+        } else {
+          // Edge case: game in progress but no role assigned yet
+          // This can happen briefly during message processing
+          btnWord.classList.add('disabled');
+          btnClue.classList.add('disabled');
+        }
+      }
+    }
 
     // Get Word button
     document.getElementById('btnWord').onclick = () => {
-      // Check if a game is already in progress
-      if (isGameInProgress()) {
-        alert('A game is already in progress! Someone needs to end the current round before starting a new one.');
+      // Check if user is the word holder returning to their word
+      if (isGameInProgress() && currentUserRole === 'wordHolder') {
+        // Return to the existing word
+        show('word');
+        enterFullscreen();
+        wordInner.textContent = currentWord;
+        wordRevealed = true;
+        fitText(wordInner);
         return;
       }
       
+      // Check if a game is already in progress (and user is not word holder)
+      if (isGameInProgress()) {
+        // Button should be disabled for clue givers
+        return;
+      }
+      
+      // Start a new game
       const pool = currentLang === 'en' ? englishWords : greekWords;
       currentWord = pool[Math.floor(Math.random() * pool.length)];
       
       // Track this new game
       lastNewGameTime = Date.now();
+      wordHolderUUID = clientUUID;
+      currentUserRole = 'wordHolder';
       
       // Reset submitted words for new game
       submittedWords = [];
@@ -1012,14 +1072,26 @@
 
     // Type Clue button
     document.getElementById('btnClue').onclick = () => {
-      clueField.value = '';
-      show('clueIn');
-      // Focus the input field after the view is shown
-      requestAnimationFrame(() => {
-        clueField.focus();
-        // For mobile devices, also scroll into view
-        clueField.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      });
+      // Check if not in a game or not a clue giver
+      if (!isGameInProgress() || currentUserRole !== 'clueGiver') {
+        return;
+      }
+      
+      // If user has already submitted a word, show the submitted words modal
+      if (hasSubmittedWord) {
+        show('clueIn');
+        updateSubmittedWordsDisplay();
+      } else {
+        // Show clue input for new submission
+        clueField.value = '';
+        show('clueIn');
+        // Focus the input field after the view is shown
+        requestAnimationFrame(() => {
+          clueField.focus();
+          // For mobile devices, also scroll into view
+          clueField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+      }
     };
 
     // Allow only letters in clue field (any language)
@@ -1083,40 +1155,22 @@
     });
 
     // Handle browser back button/gesture
-    function goBackToMenu(skipConfirmation = false) {
-      if (!skipConfirmation && currentView !== 'menu') {
-        let confirmMessage = 'Go back to main menu?';
-        
-        if (currentView === 'word') {
-          confirmMessage = 'Leave and lose the word?';
-        } else if (currentView === 'clueIn') {
-          confirmMessage = 'Cancel clue input?';
-        } else if (currentView === 'clue') {
-          confirmMessage = 'Leave clue screen?';
-        }
-        
-        if (!confirm(confirmMessage)) {
-          // User cancelled, push the current state back to prevent navigation
-          history.pushState({ view: currentView }, '', '#' + currentView);
-          return;
-        }
-      }
+    function goBackToMenu() {
+      // No confirmation needed since we're preserving state
       
       if (countdownId) { 
         clearInterval(countdownId); 
         countdownId = null; 
       }
       
+      // Reset blur state but keep the word (don't clear it)
       if (currentView === 'word') {
-        currentWord = '';
-        // Reset blur state
         wordBlurred = false;
-        wordRevealed = false;
         wordInner.classList.remove('blurred');
         document.getElementById('wordText').classList.remove('word-blurred');
       }
       
-      // Hide submitted words when returning to menu
+      // Hide submitted words modal when returning to menu
       submittedWordsDiv.classList.add('hidden');
       
       show('menu');
