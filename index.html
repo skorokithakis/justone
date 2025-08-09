@@ -735,6 +735,11 @@
           hasSubmittedWord = false;
           updateSubmittedWordsDisplay();
         }
+        
+        // Update End Round button visibility on main menu
+        if (currentView === 'menu' && isGameInProgress()) {
+          endRoundBtn.classList.remove('hidden');
+        }
       } else if (type === 'submitWord' && word) {
         // Word submitted by a player
         const submission = { word, user };
@@ -749,6 +754,11 @@
         
         // Round ended by another player
         handleEndRound();
+        
+        // Hide End Round button on main menu
+        if (currentView === 'menu') {
+          endRoundBtn.classList.add('hidden');
+        }
       }
     }
     
@@ -874,7 +884,12 @@
       
       if (view === 'menu') {
         backBtn.classList.add('hidden');
-        endRoundBtn.classList.add('hidden');
+        // Show End Round button on main menu only if game is in progress
+        if (isGameInProgress()) {
+          endRoundBtn.classList.remove('hidden');
+        } else {
+          endRoundBtn.classList.add('hidden');
+        }
       } else {
         backBtn.classList.remove('hidden');
         // Show End Round button only on word or clue display views
