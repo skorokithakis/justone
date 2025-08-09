@@ -890,7 +890,12 @@
     document.getElementById('btnClue').onclick = () => {
       clueField.value = '';
       show('clueIn');
-      setTimeout(() => clueField.focus(), 10);
+      // Focus the input field after the view is shown
+      requestAnimationFrame(() => {
+        clueField.focus();
+        // For mobile devices, also scroll into view
+        clueField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
     };
 
     // Allow only letters in clue field (any language)
@@ -926,6 +931,12 @@
       const val = clueField.value.trim();
       if (!val) return;
       if (/\s/.test(val)) { alert('One word only!'); return; }
+      
+      // Check if there's a word in the channel
+      if (!currentWord) {
+        alert('No word to give a clue for! Someone needs to start a new game first.');
+        return;
+      }
       
       // Send the submitted word to other players
       sendGweetMessage({
