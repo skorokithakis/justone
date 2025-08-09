@@ -180,9 +180,18 @@
     }
     
     /* Blur effect for word text */
+    #wordText {
+        transition: background 0.3s ease;
+    }
+
     .blurred {
       filter: blur(60px);
       transition: filter 0.3s ease;
+    }
+    
+    /* Gray background when word is blurred */
+    .word-blurred {
+      background: #ff9aa2;
     }
     
     /* Back Button */
@@ -392,13 +401,16 @@
     };
 
     // Word screen tap-to-blur functionality
-    document.getElementById('wordText').addEventListener('click', () => {
+    const wordText = document.getElementById('wordText');
+    wordText.addEventListener('click', () => {
       if (currentView === 'word' && wordRevealed) {
         wordBlurred = !wordBlurred;
         if (wordBlurred) {
           wordInner.classList.add('blurred');
+          wordText.classList.add('word-blurred');
         } else {
           wordInner.classList.remove('blurred');
+          wordText.classList.remove('word-blurred');
         }
         
         // Haptic feedback
@@ -487,6 +499,7 @@
         wordBlurred = false;
         wordRevealed = false;
         wordInner.classList.remove('blurred');
+        document.getElementById('wordText').classList.remove('word-blurred');
       }
       show('menu');
     }
@@ -514,37 +527,6 @@
         if (currentView === 'clue') fitText(clueInner);
       }, 100);
     });
-
-    // PWA Service Worker Registration
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-          .then(registration => {
-            console.log('SW registered: ', registration);
-            
-            // Check for updates
-            registration.addEventListener('updatefound', () => {
-              const newWorker = registration.installing;
-              console.log('New service worker installing');
-              
-              newWorker.addEventListener('statechange', () => {
-                if (newWorker.state === 'installed') {
-                  console.log('New service worker installed, will activate on next visit');
-                }
-              });
-            });
-          })
-          .catch(registrationError => {
-            console.log('SW registration failed: ', registrationError);
-          });
-      });
-      
-      // Handle service worker updates
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
-        console.log('Service worker updated, reloading page');
-        window.location.reload();
-      });
-    }
 
     // Fullscreen functionality
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
