@@ -255,6 +255,30 @@
       display: none;
     }
     
+    /* End Round Button */
+    #endRoundBtn {
+      position: fixed;
+      bottom: 1rem;
+      right: 1rem;
+      background: #ff9aa2;
+      color: #2c3e50;
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      font-size: 1.2rem;
+      font-weight: bold;
+      z-index: 10;
+      cursor: pointer;
+      transition: background 0.25s;
+    }
+    
+    #endRoundBtn:hover {
+      background: #ffc9c9;
+    }
+    
+    #endRoundBtn.hidden {
+      display: none;
+    }
+    
     /* Room Modal */
     #roomModal {
       position: fixed;
@@ -416,6 +440,7 @@
     <button id="fsBtn" title="Toggle Fullscreen">⛶</button>
     
     <div id="roomBadge" class="hidden"></div>
+    <button id="endRoundBtn" class="hidden">End Round</button>
     
     <div id="roomModal" class="hidden">
       <div class="modal-content">
@@ -503,6 +528,8 @@
     let gweetController = null;
     let submittedWords = [];
     let hasSubmittedWord = false;
+    let lastNewGameTime = null;
+    let lastEndRoundTime = null;
 
     // Language picker
     document.querySelectorAll('[name="lang"]').forEach(radio => {
@@ -540,6 +567,7 @@
     const submittedWordsDiv = document.getElementById('submittedWords');
     const wordsList = document.getElementById('wordsList');
     const currentWordDisplay = document.getElementById('currentWordDisplay');
+    const endRoundBtn = document.getElementById('endRoundBtn');
     
     // Show room modal on load
     setTimeout(() => {
@@ -693,6 +721,9 @@
       
       // Process based on message type
       if (type === 'newGame') {
+        // Track timing of new game
+        lastNewGameTime = Date.now();
+        
         // New game started by another player
         if (user !== clientUUID) {
           currentWord = word;
@@ -712,6 +743,12 @@
           submittedWords.push(submission);
           updateSubmittedWordsDisplay();
         }
+      } else if (type === 'endRound') {
+        // Track timing of end round
+        lastEndRoundTime = Date.now();
+        
+        // Round ended by another player
+        handleEndRound();
       }
     }
     
@@ -790,6 +827,46 @@
       fitText(clueInner);
       setTimeout(() => fitText(clueInner), 100);
     });
+    
+    // Handle ending the round (clears state and returns to menu)
+    function handleEndRound() {
+      // Clear word state
+      currentWord = '';
+      submittedWords = [];
+      hasSubmittedWord = false;
+      wordRevealed = false;
+      wordBlurred = false;
+      
+      // Clear any countdown
+      if (countdownId) { 
+        clearInterval(countdownId); 
+        countdownId = null; 
+      }
+      
+      // Reset visual states
+      wordInner.classList.remove('blurred');
+      document.getElementById('wordText').classList.remove('word-blurred');
+      submittedWordsDiv.classList.add('hidden');
+      
+      // Return to main menu
+      show('menu');
+    }
+    
+    // End Round button handler
+    endRoundBtn.addEventListener('click', () => {
+      if (confirm('Are you sure you want to end the current round for everyone?')) {
+        // Track the end round timing
+        lastEndRoundTime = Date.now();
+        
+        // Send endRound message to other players
+        sendGweetMessage({
+          type: 'endRound'
+        });
+        
+        // Handle the end round locally
+        handleEndRound();
+      }
+    });
 
     // View management
     function show(view) {
@@ -797,8 +874,15 @@
       
       if (view === 'menu') {
         backBtn.classList.add('hidden');
+        endRoundBtn.classList.add('hidden');
       } else {
         backBtn.classList.remove('hidden');
+        // Show End Round button only on word or clue display views
+        if (view === 'word' || view === 'clue') {
+          endRoundBtn.classList.remove('hidden');
+        } else {
+          endRoundBtn.classList.add('hidden');
+        }
       }
       
       switch(view) {
@@ -825,10 +909,35 @@
       }
     }
 
+    // Check if a game is currently in progress
+    function isGameInProgress() {
+      // No game has been started yet
+      if (!lastNewGameTime) {
+        return false;
+      }
+      
+      // If there's been an endRound after the last newGame, no game is in progress
+      if (lastEndRoundTime && lastEndRoundTime > lastNewGameTime) {
+        return false;
+      }
+      
+      // If there's been a newGame but no endRound after it, game is in progress
+      return true;
+    }
+
     // Get Word button
     document.getElementById('btnWord').onclick = () => {
+      // Check if a game is already in progress
+      if (isGameInProgress()) {
+        alert('A game is already in progress! Someone needs to end the current round before starting a new one.');
+        return;
+      }
+      
       const pool = currentLang === 'en' ? englishWords : greekWords;
       currentWord = pool[Math.floor(Math.random() * pool.length)];
+      
+      // Track this new game
+      lastNewGameTime = Date.now();
       
       // Reset submitted words for new game
       submittedWords = [];
