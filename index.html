@@ -345,6 +345,13 @@
         case 'clue': clueDisplay.classList.remove('hidden'); break;
       }
       currentView = view;
+      
+      // Update browser history for back button handling
+      if (view !== 'menu') {
+        history.pushState({ view: view }, '', '#' + view);
+      } else {
+        history.replaceState({ view: 'menu' }, '', window.location.pathname);
+      }
     }
 
     // Auto fullscreen helper
@@ -449,15 +456,32 @@
       setTimeout(() => fitText(clueInner), 100);
     });
 
-    // Back button
-    backBtn.onclick = () => {
+    // Handle browser back button/gesture
+    function goBackToMenu(skipConfirmation = false) {
+      if (!skipConfirmation && currentView !== 'menu') {
+        let confirmMessage = 'Go back to main menu?';
+        
+        if (currentView === 'word') {
+          confirmMessage = 'Leave and lose the word?';
+        } else if (currentView === 'clueIn') {
+          confirmMessage = 'Cancel clue input?';
+        } else if (currentView === 'clue') {
+          confirmMessage = 'Leave clue screen?';
+        }
+        
+        if (!confirm(confirmMessage)) {
+          // User cancelled, push the current state back to prevent navigation
+          history.pushState({ view: currentView }, '', '#' + currentView);
+          return;
+        }
+      }
+      
       if (countdownId) { 
         clearInterval(countdownId); 
         countdownId = null; 
       }
       
       if (currentView === 'word') {
-        if (!confirm('Leave and lose the word?')) return;
         currentWord = '';
         // Reset blur state
         wordBlurred = false;
@@ -465,7 +489,18 @@
         wordInner.classList.remove('blurred');
       }
       show('menu');
+    }
+
+    // Back button
+    backBtn.onclick = () => {
+      goBackToMenu();
     };
+
+    // Handle browser back button/swipe navigation
+    window.addEventListener('popstate', (event) => {
+      // Show confirmation for word screen, always go back for other screens
+      goBackToMenu();
+    });
 
     // Event listeners for dynamic resizing
     window.addEventListener('resize', () => {
