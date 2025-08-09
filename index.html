@@ -1,204 +1,292 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport"
-        content="width=device-width,
-                 height=device-height,
-                 initial-scale=1,
-                 maximum-scale=1,
-                 minimum-scale=1,
-                 user-scalable=no">
-  <meta name="mobile-web-app-capable"  content="yes">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#ffb3ba">
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+  <link rel="apple-touch-icon" href="./icon-192.png">
   <title>Just One Helper</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+Mono+TC&display=swap" rel="stylesheet">
   <style>
-    :root{
-      --vh:1vh;          /* will be updated from JS */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
     }
-    html{
-      height:100%;
-      overflow:hidden;   /* NEW – block any vertical scrolling */
-      background:#f8f9fa;   /* same colour as body */
+    
+    html, body {
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+      background: #f8f9fa;
+      font-family: "LXGW WenKai Mono TC", monospace;
+      -webkit-user-select: none;
+      user-select: none;
+      position: fixed;
+      top: 0;
+      left: 0;
     }
-    body{
-      margin:0;
-      background:#f8f9fa;
-      font-family:"Comic Sans MS",sans-serif;
-      overflow:hidden;
-      -webkit-user-select:none;
-              user-select:none;
+    
+    #app {
+      width: 100dvw;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
     }
-    .hidden{display:none !important;}
-    .streamer{
-      position:absolute;
-      top:-120%;
-      width:4px;
-      height:220%;
-      background:linear-gradient(#ff9aa2 0%,#ffb3ba 50%,#ffc9c9 100%);
-      transform:rotate(30deg);
-      animation:drift 10s linear infinite;
-      opacity:.5;
-      pointer-events:none;
+    
+    .hidden { display: none !important; }
+    
+    /* Main Menu */
+    #mainMenu {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 2rem;
+      padding: 2rem;
+    }
+    
+    #langPicker {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    
+    #langPicker label {
+      font-size: 1.2rem;
+      cursor: pointer;
+    }
+    
+    button {
+      font-family: "LXGW WenKai Mono TC", monospace;
+      font-size: 1.5rem;
+      padding: 1rem 2rem;
+      border: none;
+      border-radius: 12px;
+      background: #ffb3ba;
+      color: #2c3e50;
+      cursor: pointer;
+      transition: background 0.25s;
+      touch-action: manipulation;
+      min-height: 44px;
+      min-width: 44px;
+    }
+    
+    button:hover, button:active {
+      background: #ffc9c9;
+    }
+    
+    /* Fullscreen Text Views */
+    .fullscreenView {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      color: #2c3e50;
+      font-family: "LXGW WenKai Mono TC", monospace;
+      line-height: 1.1;
+      overflow: hidden;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+    
+    .fullscreenView span {
+      display: block;
+      font-size: 4rem;
+      max-width: 100%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    /* Clue Input */
+    #clueInput {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 2rem;
+    }
+    
+    #clueForm {
+      width: 100%;
+      max-width: 500px;
+    }
+    
+    .input-container {
+      position: relative;
+      width: 100%;
+      border: 3px solid #ffb3ba;
+      border-radius: 12px;
+      overflow: hidden;
+      background: white;
+      height: 70px;
+    }
+    
+    #clueField {
+      font-family: "LXGW WenKai Mono TC", monospace;
+      font-size: 1.5rem;
+      width: 100%;
+      height: 100%;
+      text-align: center;
+      padding: 1rem 70px 1rem 1rem;
+      border: none;
+      outline: none;
+      background: white;
+      box-sizing: border-box;
+    }
+    
+    #submitBtn {
+      position: absolute;
+      top: 0;
+      right: 0;
+      font-size: 1.5rem;
+      padding: 0;
+      border: none;
+      background: #ffb3ba;
+      color: #2c3e50;
+      cursor: pointer;
+      transition: background 0.25s;
+      border-radius: 0;
+      width: 60px;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    #submitBtn:hover, #submitBtn:active {
+      background: #ffc9c9;
+    }
 
-      z-index:-1;        /* NEW – push streamers behind the rest of the content */
+    #wordInner,
+    #clueInner {
+      font-weight: 900;
     }
-    @keyframes drift{
-      from{transform:translateY(-100%) rotate(30deg);}
-      to  {transform:translateY(100%)  rotate(30deg);}
+    
+    /* Back Button */
+    #backBtn {
+      position: fixed;
+      top: 1rem;
+      left: 1rem;
+      font-size: 1.5rem;
+      border-radius: 50%;
+      background: #ff9aa2;
+      z-index: 10;
+      width: 44px;
+      height: 44px;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
-    #mainMenu{
-      position:relative;
-      height:calc(var(--vh) * 100);
-      display:flex;
-      flex-direction:column;
-      justify-content:center;
-      align-items:center;
-      gap:28px;
-      z-index:1;
+    
+    #backBtn.hidden {
+      display: none;
     }
-    button{
-      font-family:"Comic Sans MS",sans-serif;
-      font-size:22px;
-      padding:14px 26px;
-      border:none;
-      border-radius:12px;
-      background:#ffb3ba;
-      color:#2c3e50;
-      cursor:pointer;
-      transition:.25s;
-    }
-    button:hover{background:#ffc9c9;}
-    .fullscreenText{
-      width:100%;
-      height:calc(var(--vh) * 100);
-      display:flex;
-      justify-content:center;
-      align-items:center;
-      padding:20px;
-      color:#2c3e50;
-      text-align:center;
-      font-family:Arial,Helvetica,sans-serif;
-      line-height:1.1;
-      overflow:hidden;
-    }
-    .fullscreenText span{display:inline-block;}
-    #backBtn{
-      position:fixed;
-      top:10px;
-      left:10px;
-      font-size:20px;
-      padding:10px 16px;
-      border-radius:50%;
-      background:#ff9aa2;
-      z-index:2;
-      display:none;
-    }
-    #fsBtn{
-      position:fixed;
-      top:10px;
-      right:10px;
-      font-size:20px;
-      padding:10px 16px;
-      border-radius:50%;
-      background:#ff9aa2;
-      z-index:2;
-      display:block;     /* hidden later if FS unsupported   */
-    }
-    #clueInput{           /* NEW rule */
-      position:fixed;     /* pin to viewport, immune to page scroll */
-      inset:0;            /* top:0; right:0; bottom:0; left:0 */
-      display:flex;       /* centre the form */
-      justify-content:center;
-      align-items:center;
-      z-index:1;
-    }
-    #clueField{
-      font-size:28px;
-      width:90vw;
-      max-width:480px;
-      text-align:center;
-      padding:12px;
-      border:3px solid #ffb3ba;
-      border-radius:10px;
+    
+    /* Fullscreen Button */
+    #fsBtn {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      font-size: 1.5rem;
+      border-radius: 50%;
+      background: #ff9aa2;
+      z-index: 10;
+      width: 44px;
+      height: 44px;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
   </style>
 </head>
 <body>
-  <div class="streamer" style="left:5%; animation-duration:9s;"></div>
-  <div class="streamer" style="left:15%; animation-duration:11s;"></div>
-  <div class="streamer" style="left:25%; animation-duration:8s;"></div>
-  <div class="streamer" style="left:35%; animation-duration:10s;"></div>
-  <div class="streamer" style="left:45%; animation-duration:12s;"></div>
-  <div class="streamer" style="left:55%; animation-duration:7s;"></div>
-  <div class="streamer" style="left:65%; animation-duration:13s;"></div>
-  <div class="streamer" style="left:75%; animation-duration:9.5s;"></div>
-  <div class="streamer" style="left:85%; animation-duration:10.5s;"></div>
-  <div class="streamer" style="left:95%; animation-duration:8.5s;"></div>
-
-  <div id="mainMenu">
+  <div id="app">
+    <div id="mainMenu">
       <div id="langPicker">
-          <label><input type="radio" name="lang" value="en" checked> English</label>
-          <label><input type="radio" name="lang" value="gr"> Greek</label>
+        <label><input type="radio" name="lang" value="en" checked> English</label>
+        <label><input type="radio" name="lang" value="gr"> Greek</label>
       </div>
       <button id="btnWord">Get Word</button>
       <button id="btnClue">Type Clue</button>
-  </div>
+    </div>
 
-  <div id="wordDisplay" class="hidden">
-      <div id="wordText" class="fullscreenText">
-          <span id="wordInner"></span>
+    <div id="wordDisplay" class="hidden">
+      <div id="wordText" class="fullscreenView">
+        <span id="wordInner"></span>
       </div>
-  </div>
+    </div>
 
-  <div id="clueInput" class="hidden">
+    <div id="clueInput" class="hidden">
       <form id="clueForm" autocomplete="off">
-          <input id="clueField"
-                 type="text"
-                 maxlength="30"
-                 placeholder="Enter one-word clue"
-                 pattern="\S+"
-                 required>
+        <div class="input-container">
+          <input id="clueField" type="text" maxlength="30" placeholder="Enter one-word clue" pattern="\S+" required>
+          <button type="submit" id="submitBtn">→</button>
+        </div>
       </form>
-  </div>
+    </div>
 
-  <div id="clueDisplay" class="hidden">
-      <div id="clueText" class="fullscreenText">
-          <span id="clueInner"></span>
+    <div id="clueDisplay" class="hidden">
+      <div id="clueText" class="fullscreenView">
+        <span id="clueInner"></span>
       </div>
-  </div>
+    </div>
 
-  <button id="backBtn">←</button>
-  <button id="fsBtn" title="Toggle fullscreen">⛶</button>
+    <button id="backBtn" class="hidden">←</button>
+    <button id="fsBtn" title="Toggle Fullscreen">⛶</button
+  </div>
 
   <script>
-    // ── real-vh helper ──────────────────────────────────────────────
-    function setRealVh(){
-      const vh = (window.visualViewport ? window.visualViewport.height
-                                        : window.innerHeight) * 0.01;
-      document.documentElement.style.setProperty('--vh', `${vh}px`);
+    // Dynamic text scaling function (FitText.js-like)
+    function fitText(element, minFontSize = 20, maxFontSize = 300) {
+      if (!element || !element.textContent.trim()) return;
+      
+      const container = element.parentElement;
+      const containerWidth = container.clientWidth * 0.9;
+      const containerHeight = container.clientHeight * 0.9;
+      
+      let fontSize = minFontSize;
+      element.style.fontSize = fontSize + 'px';
+      element.style.whiteSpace = 'nowrap';
+      
+      // Binary search for optimal font size
+      let low = minFontSize;
+      let high = maxFontSize;
+      
+      while (low <= high) {
+        fontSize = Math.floor((low + high) / 2);
+        element.style.fontSize = fontSize + 'px';
+        
+        if (element.scrollWidth <= containerWidth && element.scrollHeight <= containerHeight) {
+          low = fontSize + 1;
+        } else {
+          high = fontSize - 1;
+        }
+      }
+      
+      element.style.fontSize = high + 'px';
     }
-    setRealVh();
-    // Drop the raw visualViewport.resize listener (it fires when the IME
-    // or suggestion bar appears) so --vh stays locked to the real device height.
-    // If you still want to refresh on true rotations or full resizes, use:
-    window.addEventListener('orientationchange', ()=>{
-      setRealVh();
-      window.dispatchEvent(new Event('resize'));
-    });
 
-    const englishWords=[
-      "elephant","computer","happiness","ocean","butterfly","mountain",
-      "friendship","rainbow","guitar","pizza","volcano","diamond","forest",
-      "castle","spaceship","pyramid","island","whisper","storm","rocket",
-      "treasure","river","galaxy","chocolate","desert","symphony","puzzle",
-      "mirror","jungle","camera","dragon","library","circus","paradise",
-      "fireworks","safari","unicorn","labyrinth","festival","tornado",
-      "lantern","mystery","carousel","coconut","iceberg","compass","orchid",
-      "sunrise","telescope","harvest"
-    ];
+    const englishWords=["Accent", "Acorn", "Aladdin", "Alarm", "Alcatraz", "Alcohol", "Alien", "Alliance", "Amazon", "America", "Anchor", "Angel", "Anniversary", "Antarctica", "Apple", "Armstrong", "Australia", "Avatar", "Baby", "Baker", "Bald", "Ball", "Ballet", "Banana", "Band", "Bar", "Barbecue", "Barbie", "Bath", "Batman", "Battery", "Beer", "Belgium", "Bellybutton", "Belt", "Berry", "Bet", "Binoculars", "Blond", "Board", "Bone", "Bonfire", "Book", "Boss", "Bottle", "Bow", "Bowling", "Boxing", "Bracelet", "Brain", "Branch", "Bread", "Bridge", "Brush", "Bubble", "Buffy", "Burrito", "Butterfly", "Button", "Cactus", "Caesar", "Cafeteria", "Cake", "Calendar", "Canada", "Candy", "Cane", "Cannon", "Canteen", "Canvas", "Carnival", "Carousel", "Carpet", "Carton", "Cartoon", "Casino", "Castle", "Cat", "Caterpillar", "Cave", "Cavity", "Cell", "Cemetery", "Cereal", "Chain", "Champagne", "Cheddar", "Cheese", "Chewbacca", "Chicken", "Chile", "Chip", "Chocolate", "Christmas", "Churchill", "Cigarette", "Cinderella", "Cinema", "Circus", "Cleopatra", "Climb", "Clover", "Club", "Cockroach", "Cocktail", "Cocoon", "Coffee", "Colonel", "Comedy", "Comforter", "Computer", "Concert", "Cookie", "Cork", "Corner", "Cougar", "Crane", "Crepe", "Crocodile", "Croissant", "Cross", "Crossroads", "Crown", "Cube", "Cup", "Cupid", "Cycle", "Dance", "Darwin", "Decathlon", "Defense", "Dentist", "Desert", "Devil", "Diamond", "Dinosaur", "Disco", "Doctor", "Doll", "Doping", "Dracula", "Drag", "Dream", "Dune", "Dwarf", "Easter", "Egg", "Elastic", "Election", "Electricity", "Elephant", "Elf", "Elvis", "Emergency", "Emperor", "End", "Evening", "Everest", "Explosion", "Facebook", "Failure", "Fair", "Fairy", "Fall", "Farm", "Fashion", "Fever", "Fire", "Firecracker", "Fireman", "Fitzgerald", "Flame", "Flash", "Flight", "Flintstone", "Flower", "Flute", "Foam", "Ford", "Forest", "Fork", "Fountain", "Fox", "France", "Frankenstein", "Friday", "Fries", "Frost", "Fur", "Galaxy", "Game", "Gandhi", "Garden", "Garlic", "Genius", "Ghost", "Giant", "Gladiator", "Glass", "Glasses", "Goal", "Godfather", "Godzilla", "Golf", "Google", "Gothic", "Grass", "Greece", "Gremlins", "Grenade", "Grotto", "Guard", "Guillotine", "Gumbo", "Hair", "Hairdresser", "Halloween", "Hammer", "Handle", "Hanukkah", "Hat", "Hazelnut", "Heart", "Heel", "Helicopter", "Helmet", "History", "Hockey", "Hole", "Hollywood", "Honey", "Hose", "Hotel", "House", "Hulk", "Human", "Humor", "Hunter", "Ice", "Ikea", "Iris", "Iron", "Island", "Israel", "Italy", "Jackson", "Jedi", "Jewelry", "Joker", "Jones", "Jungle", "Karate", "King", "Knife", "Knight", "Ladder", "Ladybug", "Lake", "Lamp", "Language", "Large", "Lava", "Lawyer", "Leaf", "Leap", "Lego", "Letter", "Light", "Lightbulb", "Lighthouse", "Lightning", "Limb", "Lion", "Lonely", "Lottery", "Machine", "Mad", "Mafia", "Magician", "Magnet", "Manual", "Manure", "Map", "Mario", "Market", "Marriage", "Mars", "Mask", "Matrix", "Melon", "Metal", "Mexico", "Mickey", "Microsoft", "Milk", "Mill", "Mirage", "Mirror", "Missile", "Monkey", "Monopoly", "Moon", "Moscow", "Mosquito", "Mountain", "Mouse", "Mouth", "Mower", "Mozart", "Mummy", "Muse", "Mushroom", "Music", "Musketeer", "Mustache", "Mustard", "Myth", "Nail", "Necklace", "Needle", "Neighborhood", "Nest", "New", "Newspaper", "Nile", "Ninja", "Nintendo", "Noodle", "Nuclear", "Number", "Nun", "Oasis", "Octopus", "Olympics", "Opera", "Operation", "Oprah", "Orange", "Oven", "Painting", "Pair", "Palace", "Pan", "Panda", "Parachute", "Paradise", "Parrot", "Passion", "Peace", "Peach", "Peanut", "Pear", "Pebble", "Penguin", "Pepper", "Perfume", "Picasso", "Pie", "Pig", "Pigeon", "Pikachu", "Pillow", "Pilot", "Pimento", "Pipe", "Pirate", "Pit", "Pizza", "Plane", "Plastic", "Playstation", "Plier", "Poison", "Poker", "Polar", "Pole", "Police", "Pony", "Pool", "Pope", "Porcelain", "Potato", "Potter", "Powder", "Pregnant", "President", "Primary", "Princess", "Prison", "Prom", "Psycho", "Pump", "Punk", "Puppet", "Purse", "Pyramid", "Radio", "Rail", "Rain", "Rake", "Ram", "Rambo", "Ramses", "Rap", "Rat", "Ray", "Reggae", "Register", "Revolution", "Ring", "Ripe", "River", "Robot", "Rock", "Rocky", "Room", "Rooster", "Root", "Rope", "Rose", "Ruler", "Rum", "Safari", "Safe", "Sahara", "Sail", "Salt", "Sand", "Sausage", "Scale", "Scene", "School", "Screw", "Series", "Sewer", "Shack", "Shakespeare", "Shark", "Sheep", "Shelf", "Shell", "Sherlock", "Ship", "Shovel", "Shower", "Shrek", "Shrimp", "Simpson", "Siren", "Ski", "Sleeve", "Slipper", "Smoke", "Snake", "Snow", "Soap", "Sock", "Socket", "Sofa", "Sombrero", "Song", "Spartacus", "Spear", "Spice", "Spielberg", "Spy", "Stallion", "Star", "Starbucks", "Stark", "Station", "Stew", "Sting", "Stone", "Straw", "Strawberry", "String", "Study", "Stuffing", "Subway", "Sugar", "Sun", "Switzerland", "Sword", "Syrup", "Tango", "Tarantino", "Tarzan", "Tattoo", "Taxi", "Temple", "Tennis", "Terminator", "Theater", "Thought", "Thread", "Throat", "Thunder", "Ticket", "Tie", "Tiger", "Titanic", "Tobacco", "Tokyo", "Tolkien", "Tomato", "Tool", "Tornado", "Towel", "Tower", "Tradition", "Train", "Treasure", "Triangle", "Troy", "Truce", "Tube", "Tulip", "Tuna", "Tunnel", "Umbrella", "Unicorn", "Uniform", "Vacation", "Vampire", "Vegas", "Vegetable", "Vengeance", "Venus", "Viking", "Violin", "Virus", "Volcano", "Waltz", "War", "Watch", "Wave", "Weather", "Western", "Wheat", "White", "Widowmaker", "Wind", "Window", "Wine", "Wolf", "Yellow", "Zeus", "Zombie", "Zoo"];
+    
     const greekWords=[
       "ελέφαντας","υπολογιστής","ευτυχία","θάλασσα","πεταλούδα","βουνό",
       "φιλία","ουράνιο τόξο","κιθάρα","πίτσα","ηφαίστειο","διαμάντι","δάσος",
@@ -210,113 +298,136 @@
       "παγόβουνο","πυξίδα","ορχιδέα","ανατολή","τηλεσκόπιο","σοδειά"
     ];
 
-    const mainMenu    = document.getElementById('mainMenu');
+    const mainMenu = document.getElementById('mainMenu');
     const wordDisplay = document.getElementById('wordDisplay');
-    const clueInput   = document.getElementById('clueInput');
+    const clueInput = document.getElementById('clueInput');
     const clueDisplay = document.getElementById('clueDisplay');
-    const backBtn     = document.getElementById('backBtn');
+    const backBtn = document.getElementById('backBtn');
     const fsBtn = document.getElementById('fsBtn');
-    const wordText    = document.getElementById('wordText');
-    const clueText    = document.getElementById('clueText');
-    const clueField   = document.getElementById('clueField');
-    const wordInner   = document.getElementById('wordInner');
-    const clueInner   = document.getElementById('clueInner');
-    let currentWord   = '';
-    let currentView   = 'menu';   // "menu" | "word" | "clueInput" | "clueShow"
-    let currentLang   = 'en';
-    let countdownId = null;   // id returned by setInterval for the 3-sec countdown
+    const wordInner = document.getElementById('wordInner');
+    const clueInner = document.getElementById('clueInner');
+    const clueField = document.getElementById('clueField');
+    
+    let currentWord = '';
+    let currentView = 'menu';
+    let currentLang = 'en';
+    let countdownId = null;
 
-
-    document.querySelectorAll('[name="lang"]').forEach(radio=>{
-       radio.addEventListener('change',e=>{
-          currentLang=e.target.value;
-       });
+    // Language picker
+    document.querySelectorAll('[name="lang"]').forEach(radio => {
+      radio.addEventListener('change', e => {
+        currentLang = e.target.value;
+      });
     });
 
-
-    function show(view){
-      window.scrollTo(0,0);
-      [mainMenu,wordDisplay,clueInput,clueDisplay].forEach(v=>v.classList.add('hidden'));
-      backBtn.style.display = (view==='menu')?'none':'block';
-      switch(view){
-        case 'menu':   mainMenu.classList.remove('hidden');   break;
-        case 'word':   wordDisplay.classList.remove('hidden');break;
-        case 'clueIn': clueInput.classList.remove('hidden');  break;
-        case 'clue':   clueDisplay.classList.remove('hidden');break;
+    // View management
+    function show(view) {
+      [mainMenu, wordDisplay, clueInput, clueDisplay].forEach(v => v.classList.add('hidden'));
+      
+      if (view === 'menu') {
+        backBtn.classList.add('hidden');
+      } else {
+        backBtn.classList.remove('hidden');
       }
-      currentView=view;
+      
+      switch(view) {
+        case 'menu': mainMenu.classList.remove('hidden'); break;
+        case 'word': wordDisplay.classList.remove('hidden'); break;
+        case 'clueIn': clueInput.classList.remove('hidden'); break;
+        case 'clue': clueDisplay.classList.remove('hidden'); break;
+      }
+      currentView = view;
     }
 
-    // Make the text as large as possible while staying inside
-    // 90 % of both viewport width and height.
-    function fitText(el){
-      if (!el) return;
-
-      const maxH = window.innerHeight * 0.9;
-      const maxW = window.innerWidth  * 0.9;
-
-      let size = 10;                       // px – start small
-      el.style.fontSize = size + 'px';
-
-      // grow until it would overflow, then step back one notch
-      while (true){
-        const {width,height} = el.getBoundingClientRect();
-        if ((width > maxW || height > maxH) || size > 1000){
-          size -= 2;
-          el.style.fontSize = size + 'px';
-          break;
-        }
-        size += 2;
-        el.style.fontSize = size + 'px';
+    // Auto fullscreen helper
+    function enterFullscreen() {
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      if (!isIOS && document.documentElement.requestFullscreen && !document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
       }
     }
 
+    // Get Word button
     document.getElementById('btnWord').onclick = () => {
       const pool = currentLang === 'en' ? englishWords : greekWords;
       currentWord = pool[Math.floor(Math.random() * pool.length)];
 
       show('word');
+      enterFullscreen(); // Auto enter fullscreen
 
       let seconds = 2;
-      wordInner.textContent = seconds;   // show countdown
+      wordInner.textContent = seconds;
       fitText(wordInner);
 
-      if (countdownId) clearInterval(countdownId);      // safety
+      if (countdownId) clearInterval(countdownId);
       countdownId = setInterval(() => {
         seconds--;
         if (seconds <= 0) {
           clearInterval(countdownId);
           countdownId = null;
-          wordInner.textContent = currentWord;          // finally reveal the word
+          wordInner.textContent = currentWord;
         } else {
-          wordInner.textContent = seconds;              // update countdown
+          wordInner.textContent = seconds;
         }
-        fitText(wordInner);                             // keep it large
+        fitText(wordInner);
       }, 1000);
     };
 
-    document.getElementById('btnClue').onclick=()=>{
-       clueField.value='';
-       show('clueIn');
-       setTimeout(()=>clueField.focus(),10);
+    // Type Clue button
+    document.getElementById('btnClue').onclick = () => {
+      clueField.value = '';
+      show('clueIn');
+      setTimeout(() => clueField.focus(), 10);
     };
 
-    document.getElementById('clueForm').addEventListener('submit',e=>{
-       e.preventDefault();
-       const val=clueField.value.trim();
-       if(!val) return;
-       if(/\s/.test(val)){alert('One word only!');return;}
-       clueInner.textContent = val;
-       show('clue');
-       fitText(clueInner);
-       // run once more after the keyboard closes so sizing is correct
-       setTimeout(() => fitText(clueInner), 150);
+    // Allow only letters in clue field (any language)
+    clueField.addEventListener('keydown', (e) => {
+      // Allow: backspace, delete, tab, escape, enter, arrow keys
+      if ([8, 9, 27, 13, 37, 38, 39, 40, 46].includes(e.keyCode) ||
+          // Allow Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X, Ctrl+Z, Cmd+A, Cmd+C, Cmd+V, Cmd+X, Cmd+Z
+          (e.ctrlKey === true && [65, 67, 86, 88, 90].includes(e.keyCode)) ||
+          (e.metaKey === true && [65, 67, 86, 88, 90].includes(e.keyCode))) {
+        return;
+      }
+      
+      // For non-ASCII characters, let the input event handle the filtering
+      if (e.keyCode > 127) {
+        return;
+      }
+      
+      // Prevent if not a letter (for ASCII characters)
+      const char = String.fromCharCode(e.keyCode);
+      if (!/^[a-zA-Z]$/.test(char)) {
+        e.preventDefault();
+      }
+    });
+    
+    clueField.addEventListener('input', (e) => {
+      // Remove any non-letter characters (supports all Unicode letters)
+      e.target.value = e.target.value.replace(/[^\p{L}]/gu, '');
     });
 
+    // Clue form submission
+    document.getElementById('clueForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const val = clueField.value.trim();
+      if (!val) return;
+      if (/\s/.test(val)) { alert('One word only!'); return; }
+      
+      clueInner.textContent = val;
+      show('clue');
+      enterFullscreen(); // Auto enter fullscreen
+      fitText(clueInner);
+      setTimeout(() => fitText(clueInner), 100);
+    });
 
+    // Back button
     backBtn.onclick = () => {
-      if (countdownId) { clearInterval(countdownId); countdownId = null; }  // NEW
-
+      if (countdownId) { 
+        clearInterval(countdownId); 
+        countdownId = null; 
+      }
+      
       if (currentView === 'word') {
         if (!confirm('Leave and lose the word?')) return;
         currentWord = '';
@@ -324,40 +435,67 @@
       show('menu');
     };
 
-    window.addEventListener('resize',()=>{
-       if(currentView==='word') fitText(wordInner);
-       if(currentView==='clue') fitText(clueInner);
+    // Event listeners for dynamic resizing
+    window.addEventListener('resize', () => {
+      if (currentView === 'word') fitText(wordInner);
+      if (currentView === 'clue') fitText(clueInner);
     });
-    window.addEventListener('orientationchange',()=>{
-      setRealVh();
-      window.dispatchEvent(new Event('resize'));
+    
+    window.addEventListener('orientationchange', () => {
+      setTimeout(() => {
+        if (currentView === 'word') fitText(wordInner);
+        if (currentView === 'clue') fitText(clueInner);
+      }, 100);
     });
 
+    // PWA Service Worker Registration
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(registration => {
+            console.log('SW registered: ', registration);
+            
+            // Check for updates
+            registration.addEventListener('updatefound', () => {
+              const newWorker = registration.installing;
+              console.log('New service worker installing');
+              
+              newWorker.addEventListener('statechange', () => {
+                if (newWorker.state === 'installed') {
+                  console.log('New service worker installed, will activate on next visit');
+                }
+              });
+            });
+          })
+          .catch(registrationError => {
+            console.log('SW registration failed: ', registrationError);
+          });
+      });
+      
+      // Handle service worker updates
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        console.log('Service worker updated, reloading page');
+        window.location.reload();
+      });
+    }
 
-    // Optionally, add more streamers for extra flair:
-    // for(let i=0;i<20;i++){
-    //    const d=document.createElement('div');
-    //    d.className='streamer';
-    //    d.style.left=Math.random()*100+'%';
-    //    d.style.animationDuration=6+Math.random()*8+'s';
-    //    document.body.appendChild(d);
-    // }
-
-    // ── Full-screen toggle ───────────────────────────
-    if (!document.documentElement.requestFullscreen) {
-      fsBtn.style.display = 'none';        // API not available
+    // Fullscreen functionality
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    
+    if (!document.documentElement.requestFullscreen || isIOS) {
+      fsBtn.style.display = 'none';
     } else {
-      function updateFSIcon(){
+      function updateFSIcon() {
         fsBtn.textContent = document.fullscreenElement ? '🗗' : '⛶';
       }
-      fsBtn.addEventListener('click',()=>{
-        if (document.fullscreenElement){
+      fsBtn.addEventListener('click', () => {
+        if (document.fullscreenElement) {
           document.exitFullscreen?.();
         } else {
-          document.documentElement.requestFullscreen().catch(()=>{});
+          document.documentElement.requestFullscreen().catch(() => {});
         }
       });
-      document.addEventListener('fullscreenchange',updateFSIcon);
+      document.addEventListener('fullscreenchange', updateFSIcon);
       updateFSIcon();
     }
   </script>
