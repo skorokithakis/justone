@@ -1,0 +1,365 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport"
+        content="width=device-width,
+                 height=device-height,
+                 initial-scale=1,
+                 maximum-scale=1,
+                 minimum-scale=1,
+                 user-scalable=no">
+  <meta name="mobile-web-app-capable"  content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Just One Helper</title>
+  <style>
+    :root{
+      --vh:1vh;          /* will be updated from JS */
+    }
+    html{
+      height:100%;
+      overflow:hidden;   /* NEW – block any vertical scrolling */
+      background:#f8f9fa;   /* same colour as body */
+    }
+    body{
+      margin:0;
+      background:#f8f9fa;
+      font-family:"Comic Sans MS",sans-serif;
+      overflow:hidden;
+      -webkit-user-select:none;
+              user-select:none;
+    }
+    .hidden{display:none !important;}
+    .streamer{
+      position:absolute;
+      top:-120%;
+      width:4px;
+      height:220%;
+      background:linear-gradient(#ff9aa2 0%,#ffb3ba 50%,#ffc9c9 100%);
+      transform:rotate(30deg);
+      animation:drift 10s linear infinite;
+      opacity:.5;
+      pointer-events:none;
+
+      z-index:-1;        /* NEW – push streamers behind the rest of the content */
+    }
+    @keyframes drift{
+      from{transform:translateY(-100%) rotate(30deg);}
+      to  {transform:translateY(100%)  rotate(30deg);}
+    }
+    #mainMenu{
+      position:relative;
+      height:calc(var(--vh) * 100);
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      align-items:center;
+      gap:28px;
+      z-index:1;
+    }
+    button{
+      font-family:"Comic Sans MS",sans-serif;
+      font-size:22px;
+      padding:14px 26px;
+      border:none;
+      border-radius:12px;
+      background:#ffb3ba;
+      color:#2c3e50;
+      cursor:pointer;
+      transition:.25s;
+    }
+    button:hover{background:#ffc9c9;}
+    .fullscreenText{
+      width:100%;
+      height:calc(var(--vh) * 100);
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      padding:20px;
+      color:#2c3e50;
+      text-align:center;
+      font-family:Arial,Helvetica,sans-serif;
+      line-height:1.1;
+      overflow:hidden;
+    }
+    .fullscreenText span{display:inline-block;}
+    #backBtn{
+      position:fixed;
+      top:10px;
+      left:10px;
+      font-size:20px;
+      padding:10px 16px;
+      border-radius:50%;
+      background:#ff9aa2;
+      z-index:2;
+      display:none;
+    }
+    #fsBtn{
+      position:fixed;
+      top:10px;
+      right:10px;
+      font-size:20px;
+      padding:10px 16px;
+      border-radius:50%;
+      background:#ff9aa2;
+      z-index:2;
+      display:block;     /* hidden later if FS unsupported   */
+    }
+    #clueInput{           /* NEW rule */
+      position:fixed;     /* pin to viewport, immune to page scroll */
+      inset:0;            /* top:0; right:0; bottom:0; left:0 */
+      display:flex;       /* centre the form */
+      justify-content:center;
+      align-items:center;
+      z-index:1;
+    }
+    #clueField{
+      font-size:28px;
+      width:90vw;
+      max-width:480px;
+      text-align:center;
+      padding:12px;
+      border:3px solid #ffb3ba;
+      border-radius:10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="streamer" style="left:5%; animation-duration:9s;"></div>
+  <div class="streamer" style="left:15%; animation-duration:11s;"></div>
+  <div class="streamer" style="left:25%; animation-duration:8s;"></div>
+  <div class="streamer" style="left:35%; animation-duration:10s;"></div>
+  <div class="streamer" style="left:45%; animation-duration:12s;"></div>
+  <div class="streamer" style="left:55%; animation-duration:7s;"></div>
+  <div class="streamer" style="left:65%; animation-duration:13s;"></div>
+  <div class="streamer" style="left:75%; animation-duration:9.5s;"></div>
+  <div class="streamer" style="left:85%; animation-duration:10.5s;"></div>
+  <div class="streamer" style="left:95%; animation-duration:8.5s;"></div>
+
+  <div id="mainMenu">
+      <div id="langPicker">
+          <label><input type="radio" name="lang" value="en" checked> English</label>
+          <label><input type="radio" name="lang" value="gr"> Greek</label>
+      </div>
+      <button id="btnWord">Get Word</button>
+      <button id="btnClue">Type Clue</button>
+  </div>
+
+  <div id="wordDisplay" class="hidden">
+      <div id="wordText" class="fullscreenText">
+          <span id="wordInner"></span>
+      </div>
+  </div>
+
+  <div id="clueInput" class="hidden">
+      <form id="clueForm" autocomplete="off">
+          <input id="clueField"
+                 type="text"
+                 maxlength="30"
+                 placeholder="Enter one-word clue"
+                 pattern="\S+"
+                 required>
+      </form>
+  </div>
+
+  <div id="clueDisplay" class="hidden">
+      <div id="clueText" class="fullscreenText">
+          <span id="clueInner"></span>
+      </div>
+  </div>
+
+  <button id="backBtn">←</button>
+  <button id="fsBtn" title="Toggle fullscreen">⛶</button>
+
+  <script>
+    // ── real-vh helper ──────────────────────────────────────────────
+    function setRealVh(){
+      const vh = (window.visualViewport ? window.visualViewport.height
+                                        : window.innerHeight) * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
+    }
+    setRealVh();
+    // Drop the raw visualViewport.resize listener (it fires when the IME
+    // or suggestion bar appears) so --vh stays locked to the real device height.
+    // If you still want to refresh on true rotations or full resizes, use:
+    window.addEventListener('orientationchange', ()=>{
+      setRealVh();
+      window.dispatchEvent(new Event('resize'));
+    });
+
+    const englishWords=[
+      "elephant","computer","happiness","ocean","butterfly","mountain",
+      "friendship","rainbow","guitar","pizza","volcano","diamond","forest",
+      "castle","spaceship","pyramid","island","whisper","storm","rocket",
+      "treasure","river","galaxy","chocolate","desert","symphony","puzzle",
+      "mirror","jungle","camera","dragon","library","circus","paradise",
+      "fireworks","safari","unicorn","labyrinth","festival","tornado",
+      "lantern","mystery","carousel","coconut","iceberg","compass","orchid",
+      "sunrise","telescope","harvest"
+    ];
+    const greekWords=[
+      "ελέφαντας","υπολογιστής","ευτυχία","θάλασσα","πεταλούδα","βουνό",
+      "φιλία","ουράνιο τόξο","κιθάρα","πίτσα","ηφαίστειο","διαμάντι","δάσος",
+      "κάστρο","διαστημόπλοιο","πυραμίδα","νησί","ψίθυρος","καταιγίδα",
+      "πύραυλος","θησαυρός","ποτάμι","γαλαξίας","σοκολάτα","έρημος",
+      "συμφωνία","γρίφος","καθρέφτης","ζούγκλα","κάμερα","δράκος","βιβλιοθήκη",
+      "τσίρκο","παράδεισος","πυροτεχνήματα","σαφάρι","μονόκερος","λαβύρινθος",
+      "φεστιβάλ","ανεμοστρόβιλος","φανάρι","μυστήριο","καρουζέλ","καρύδα",
+      "παγόβουνο","πυξίδα","ορχιδέα","ανατολή","τηλεσκόπιο","σοδειά"
+    ];
+
+    const mainMenu    = document.getElementById('mainMenu');
+    const wordDisplay = document.getElementById('wordDisplay');
+    const clueInput   = document.getElementById('clueInput');
+    const clueDisplay = document.getElementById('clueDisplay');
+    const backBtn     = document.getElementById('backBtn');
+    const fsBtn = document.getElementById('fsBtn');
+    const wordText    = document.getElementById('wordText');
+    const clueText    = document.getElementById('clueText');
+    const clueField   = document.getElementById('clueField');
+    const wordInner   = document.getElementById('wordInner');
+    const clueInner   = document.getElementById('clueInner');
+    let currentWord   = '';
+    let currentView   = 'menu';   // "menu" | "word" | "clueInput" | "clueShow"
+    let currentLang   = 'en';
+    let countdownId = null;   // id returned by setInterval for the 3-sec countdown
+
+
+    document.querySelectorAll('[name="lang"]').forEach(radio=>{
+       radio.addEventListener('change',e=>{
+          currentLang=e.target.value;
+       });
+    });
+
+
+    function show(view){
+      window.scrollTo(0,0);
+      [mainMenu,wordDisplay,clueInput,clueDisplay].forEach(v=>v.classList.add('hidden'));
+      backBtn.style.display = (view==='menu')?'none':'block';
+      switch(view){
+        case 'menu':   mainMenu.classList.remove('hidden');   break;
+        case 'word':   wordDisplay.classList.remove('hidden');break;
+        case 'clueIn': clueInput.classList.remove('hidden');  break;
+        case 'clue':   clueDisplay.classList.remove('hidden');break;
+      }
+      currentView=view;
+    }
+
+    // Make the text as large as possible while staying inside
+    // 90 % of both viewport width and height.
+    function fitText(el){
+      if (!el) return;
+
+      const maxH = window.innerHeight * 0.9;
+      const maxW = window.innerWidth  * 0.9;
+
+      let size = 10;                       // px – start small
+      el.style.fontSize = size + 'px';
+
+      // grow until it would overflow, then step back one notch
+      while (true){
+        const {width,height} = el.getBoundingClientRect();
+        if ((width > maxW || height > maxH) || size > 1000){
+          size -= 2;
+          el.style.fontSize = size + 'px';
+          break;
+        }
+        size += 2;
+        el.style.fontSize = size + 'px';
+      }
+    }
+
+    document.getElementById('btnWord').onclick = () => {
+      const pool = currentLang === 'en' ? englishWords : greekWords;
+      currentWord = pool[Math.floor(Math.random() * pool.length)];
+
+      show('word');
+
+      let seconds = 2;
+      wordInner.textContent = seconds;   // show countdown
+      fitText(wordInner);
+
+      if (countdownId) clearInterval(countdownId);      // safety
+      countdownId = setInterval(() => {
+        seconds--;
+        if (seconds <= 0) {
+          clearInterval(countdownId);
+          countdownId = null;
+          wordInner.textContent = currentWord;          // finally reveal the word
+        } else {
+          wordInner.textContent = seconds;              // update countdown
+        }
+        fitText(wordInner);                             // keep it large
+      }, 1000);
+    };
+
+    document.getElementById('btnClue').onclick=()=>{
+       clueField.value='';
+       show('clueIn');
+       setTimeout(()=>clueField.focus(),10);
+    };
+
+    document.getElementById('clueForm').addEventListener('submit',e=>{
+       e.preventDefault();
+       const val=clueField.value.trim();
+       if(!val) return;
+       if(/\s/.test(val)){alert('One word only!');return;}
+       clueInner.textContent = val;
+       show('clue');
+       fitText(clueInner);
+       // run once more after the keyboard closes so sizing is correct
+       setTimeout(() => fitText(clueInner), 150);
+    });
+
+
+    backBtn.onclick = () => {
+      if (countdownId) { clearInterval(countdownId); countdownId = null; }  // NEW
+
+      if (currentView === 'word') {
+        if (!confirm('Leave and lose the word?')) return;
+        currentWord = '';
+      }
+      show('menu');
+    };
+
+    window.addEventListener('resize',()=>{
+       if(currentView==='word') fitText(wordInner);
+       if(currentView==='clue') fitText(clueInner);
+    });
+    window.addEventListener('orientationchange',()=>{
+      setRealVh();
+      window.dispatchEvent(new Event('resize'));
+    });
+
+
+    // Optionally, add more streamers for extra flair:
+    // for(let i=0;i<20;i++){
+    //    const d=document.createElement('div');
+    //    d.className='streamer';
+    //    d.style.left=Math.random()*100+'%';
+    //    d.style.animationDuration=6+Math.random()*8+'s';
+    //    document.body.appendChild(d);
+    // }
+
+    // ── Full-screen toggle ───────────────────────────
+    if (!document.documentElement.requestFullscreen) {
+      fsBtn.style.display = 'none';        // API not available
+    } else {
+      function updateFSIcon(){
+        fsBtn.textContent = document.fullscreenElement ? '🗗' : '⛶';
+      }
+      fsBtn.addEventListener('click',()=>{
+        if (document.fullscreenElement){
+          document.exitFullscreen?.();
+        } else {
+          document.documentElement.requestFullscreen().catch(()=>{});
+        }
+      });
+      document.addEventListener('fullscreenchange',updateFSIcon);
+      updateFSIcon();
+    }
+  </script>
+</body>
+</html>
