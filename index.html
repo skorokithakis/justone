@@ -369,10 +369,28 @@
         const historyResponse = await fetch(`https://gweet.stavros.io/stream/${channelKey}/?latest=50`);
         const historyData = await historyResponse.json();
 
-        // Process historical messages in single pass
+        // Process historical messages
         const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
         if (historyData.messages) {
-          // Find last endRound index in recent messages
+          // First pass: Find the highest wordIndex from all recent messages.
+          let maxWordIndex = state.game.wordIndex;
+          for (let i = 0; i < historyData.messages.length; i++) {
+            const msg = historyData.messages[i];
+            // Skip messages older than 10 minutes
+            if (new Date(msg.created) < tenMinutesAgo) continue;
+            
+            // Check for wordIndex in newGame messages
+            if (msg.values?.type?.[0] === 'newGame' && msg.values?.wordIndex?.[0]) {
+              const idx = parseInt(msg.values.wordIndex[0], 10);
+              if (!isNaN(idx) && idx > maxWordIndex) {
+                maxWordIndex = idx;
+              }
+            }
+          }
+          // Apply the maximum word index found
+          state.game.wordIndex = maxWordIndex;
+
+          // Second pass: Find last endRound and process messages after it for game state
           let lastEndRoundIdx = -1;
           for (let i = historyData.messages.length - 1; i >= 0; i--) {
             const msg = historyData.messages[i];
