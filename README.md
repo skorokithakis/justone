@@ -46,42 +46,105 @@ Just One is a cooperative party game where one player (the guesser) tries to gue
 
 ## Multiplayer Network Protocol
 
-The app uses Gweet (a lightweight message streaming service) to enable real-time multiplayer functionality. Players can join the same room and share game state across devices.
+The app uses Gweet (gweet.stavros.io) as a serverless message relay service to enable real-time multiplayer functionality. Gweet provides a simple HTTP-based streaming service that allows clients to post messages to channels and stream them using Server-Sent Events (SSE).
 
-### How it works
+### Network Architecture
 
-#### Room System
+#### Channel System
 - Players join rooms using 4-letter codes (e.g., "ABCD")
 - Each room creates a unique Gweet channel: `justone-stavros-{roomcode}`
 - The room badge displays the current room code and can be clicked to copy it
+- Messages are posted to and streamed from these channels
+
+#### Client Identification
+- Each client generates a UUID on page load for unique identification
+- The UUID is included with all messages to identify the sender
+- Allows tracking which player holds the word vs who gives clues
+
+#### Network States
+The game manages three network states:
+- **OFFLINE**: Playing without network connectivity (single device mode)
+- **IN_PROGRESS**: Active game session with a word holder and clue givers
+- **ENDED**: Game finished, waiting for someone to start a new round
+
+### Message Protocol
 
 #### Message Types
-
 The protocol uses three message types sent via URL-encoded POST requests:
 
 1. **New Game** (`type=newGame`)
    - Sent when a player starts a new round by clicking "Get Word"
    - Contains: `word` (the mystery word), `lang` (language), `user` (UUID)
-   - Synchronizes the word across all players in the room
+   - Sets the sender as `wordHolder` and all others as `clueGiver`
+   - Transitions network state to IN_PROGRESS
 
 2. **Submit Word** (`type=submitWord`) 
    - Sent when a clue-giver submits their one-word clue
    - Contains: `word` (the clue), `user` (UUID)
-   - Collects all submitted clues for display to the guesser
+   - Collects all submitted clues for display with duplicate prevention
 
 3. **End Round** (`type=endRound`)
-   - Sent when any player clicks "End Round"
-   - Clears the game state and returns all players to the main menu
+   - Sent when any player clicks "End Round" 
+   - Clears all game state and returns players to main menu
+   - Transitions network state to ENDED
 
-#### Connection Management
-- The app establishes a streaming connection to Gweet on room join
-- Historical messages from the last hour are fetched on connection
-- Automatic reconnection after 5 seconds if the connection drops
-- Each client generates a unique UUID for identification
+#### Message Format
+- Supports both JSON and URL-encoded formats
+- All messages include the sender's UUID
+- Messages are processed sequentially to maintain consistency
 
-#### Game State Tracking
-- Tracks timing of `newGame` and `endRound` events to determine if a game is in progress
-- Prevents starting a new game while one is active
-- Ensures proper state synchronization across all connected players
+### Connection Flow
+
+#### Initial Connection
+1. Fetches last 50 historical messages from the channel
+2. Filters out messages older than 10 minutes
+3. Finds the last `endRound` message and only processes messages after it
+4. Establishes SSE connection for real-time updates
+5. Updates game state based on processed messages
+
+#### Streaming Connection
+- Uses fetch API with streaming response for real-time messages
+- Maintains a buffer for handling incomplete message chunks
+- Parses messages line by line from the SSE stream
+- Automatically reconnects after 5 seconds on connection failure
+
+### Synchronization Features
+
+#### Historical Message Recovery
+- When joining a room mid-game, recovers recent game state
+- Only processes messages after the last round end
+- Ensures new players see the current word and submitted clues
+
+#### Role Management
+- Tracks `wordHolderUUID` to identify who has the mystery word
+- Each client knows their role: `wordHolder` or `clueGiver`
+- UI buttons are enabled/disabled based on current role
+
+#### Game Flow Control
+- Prevents multiple simultaneous games in the same room
+- Tracks timing of game events (`lastNewGameTime`, `lastEndRoundTime`)
+- Ensures only appropriate actions are available based on game state
+
+#### Duplicate Prevention
+- Checks for duplicate word submissions before adding to list
+- Displays submitted words with visual distance indicators
+- Uses Levenshtein distance to show word similarity
+
+### Offline Mode
+
+The app supports a fully offline mode where:
+- No network messages are sent or received
+- Both "Get Word" and "Type Clue" buttons remain enabled
+- No room code or multiplayer features are shown
+- Perfect for single-device play with physical clue cards
+
+### Technical Implementation
+
+The netcode is implemented entirely client-side using vanilla JavaScript. Key features:
+- Stateless server (Gweet only relays messages)
+- All game logic lives in the clients
+- Clients coordinate through message passing
+- No persistent server-side state required
+- Resilient to network interruptions with automatic reconnection
 
 Enjoy playing Just One with your friends and family!
