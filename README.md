@@ -122,7 +122,7 @@ The protocol uses three message types sent via URL-encoded POST requests:
 
 #### Game Flow Control
 - Prevents multiple simultaneous games in the same room
-- Tracks timing of game events (`lastNewGameTime`, `lastEndRoundTime`)
+- Uses network state transitions to manage game lifecycle
 - Ensures only appropriate actions are available based on game state
 
 #### Duplicate Prevention
