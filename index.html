@@ -380,11 +380,32 @@
       border-radius: 8px;
       font-size: 1.2rem;
       text-align: center;
+      transition: background 0.3s ease;
     }
     
     .word-list li.own-word {
       background: #ffb3ba;
       font-weight: bold;
+    }
+    
+    .word-list li.distance-0 {
+      background: #ffb3ba;
+    }
+    
+    .word-list li.distance-1 {
+      background: #ffc4c4;
+    }
+    
+    .word-list li.distance-2 {
+      background: #ffd5d5;
+    }
+    
+    .word-list li.distance-3 {
+      background: #ffe6e6;
+    }
+    
+    .word-list li.distance-4 {
+      background: #fff0f0;
     }
     
     #currentWordDisplay {
@@ -545,6 +566,44 @@
         currentLang = e.target.value;
       });
     });
+    
+    // Calculate Levenshtein distance between two strings (case-insensitive)
+    function levenshteinDistance(string_a, string_b) {
+      const a = string_a.toLowerCase();
+      const b = string_b.toLowerCase();
+      
+      if (a.length === 0) return b.length;
+      if (b.length === 0) return a.length;
+      
+      const matrix = [];
+      
+      // Initialize the first column
+      for (let i = 0; i <= b.length; i++) {
+        matrix[i] = [i];
+      }
+      
+      // Initialize the first row
+      for (let j = 0; j <= a.length; j++) {
+        matrix[0][j] = j;
+      }
+      
+      // Calculate distances
+      for (let i = 1; i <= b.length; i++) {
+        for (let j = 1; j <= a.length; j++) {
+          if (b.charAt(i - 1) === a.charAt(j - 1)) {
+            matrix[i][j] = matrix[i - 1][j - 1];
+          } else {
+            matrix[i][j] = Math.min(
+              matrix[i - 1][j - 1] + 1, // substitution
+              matrix[i][j - 1] + 1,     // insertion
+              matrix[i - 1][j] + 1      // deletion
+            );
+          }
+        }
+      }
+      
+      return matrix[b.length][a.length];
+    }
     
     // Generate UUID for client identification
     function generateUUID() {
@@ -823,8 +882,10 @@
       // Clear and rebuild the list
       wordsList.innerHTML = '';
       
-      // Show own word first
+      // Get own submission for distance calculations
       const ownSubmission = submittedWords.find(s => s.user === clientUUID);
+      
+      // Show own word first
       if (ownSubmission) {
         const li = document.createElement('li');
         li.textContent = ownSubmission.word;
@@ -832,12 +893,22 @@
         wordsList.appendChild(li);
       }
       
-      // Show other words
+      // Show other words with distance-based coloring
       submittedWords
         .filter(s => s.user !== clientUUID)
         .forEach(submission => {
           const li = document.createElement('li');
           li.textContent = submission.word;
+          
+          // Calculate distance and apply appropriate class
+          if (ownSubmission) {
+            const distance = levenshteinDistance(ownSubmission.word, submission.word);
+            if (distance <= 4) {
+              li.className = `distance-${distance}`;
+            }
+            // Distance > 4 gets default grey background from base .word-list li style
+          }
+          
           wordsList.appendChild(li);
         });
     }
