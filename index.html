@@ -38,7 +38,7 @@
     <div id="clueInput" class="hidden">
       <form id="clueForm" autocomplete="off">
         <div class="input-container">
-          <input id="clueField" type="text" maxlength="30" placeholder="Enter one-word clue" pattern="\S+" required>
+          <input id="clueField" type="text" maxlength="30" placeholder="Enter one-word clue" pattern="[^\s]+" required>
           <button type="submit" id="submitBtn">→</button>
         </div>
       </form>
@@ -803,31 +803,17 @@
       }
     };
 
-    // Allow only letters in clue field (any language)
+    // Prevent spaces in clue field (allow all other characters including emojis)
     clueField.addEventListener('keydown', (e) => {
-      // Allow: backspace, delete, tab, escape, enter, arrow keys
-      if ([8, 9, 27, 13, 37, 38, 39, 40, 46].includes(e.keyCode) ||
-          // Allow Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X, Ctrl+Z, Cmd+A, Cmd+C, Cmd+V, Cmd+X, Cmd+Z
-          (e.ctrlKey === true && [65, 67, 86, 88, 90].includes(e.keyCode)) ||
-          (e.metaKey === true && [65, 67, 86, 88, 90].includes(e.keyCode))) {
-        return;
-      }
-
-      // For non-ASCII characters, let the input event handle the filtering
-      if (e.keyCode > 127) {
-        return;
-      }
-
-      // Prevent if not a letter (for ASCII characters)
-      const char = String.fromCharCode(e.keyCode);
-      if (!/^[a-zA-Z]$/.test(char)) {
+      // Prevent space key (keyCode 32)
+      if (e.keyCode === 32) {
         e.preventDefault();
       }
     });
 
     clueField.addEventListener('input', (e) => {
-      // Remove any non-letter characters (supports all Unicode letters)
-      e.target.value = e.target.value.replace(/[^\p{L}]/gu, '');
+      // Remove any spaces from the input
+      e.target.value = e.target.value.replace(/\s/g, '');
     });
 
     // Clue form submission
