@@ -984,6 +984,11 @@
 
     // End Round button handler
     endRoundBtn.addEventListener('click', () => {
+      // Show confirmation dialog
+      if (!confirm('Are you sure you want to end the round for everyone?')) {
+        return;
+      }
+
       // Track the end round timing
       lastEndRoundTime = Date.now();
 
