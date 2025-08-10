@@ -147,4 +147,61 @@ The netcode is implemented entirely client-side using vanilla JavaScript. Key fe
 - No persistent server-side state required
 - Resilient to network interruptions with automatic reconnection
 
+## State Management Architecture
+
+The application uses a unified `GameState` object to manage all application state, providing a clean and maintainable architecture.
+
+### State Structure
+
+The state is organized into logical groups:
+
+```javascript
+GameState = {
+  game: {
+    word: '',           // Current mystery word
+    language: 'en',     // Selected language ('en' or 'gr')
+    wordDisplay: '',    // Display state: 'hidden', 'countdown', 'visible', 'blurred'
+    countdownTimer: null // Timer ID for countdown
+  },
+  
+  view: {
+    current: 'menu'     // Current view: 'menu', 'word', 'clueIn', 'clue'
+  },
+  
+  network: {
+    status: 'ENDED',    // Network state: 'OFFLINE', 'IN_PROGRESS', 'ENDED'
+    roomCode: '',       // 4-letter room code
+    clientId: '',       // Unique client UUID
+    userRole: null,     // Player role: 'wordHolder', 'clueGiver', or null
+    controller: null    // WebSocket controller for connection management
+  },
+  
+  submissions: []       // Array of submitted clues: {word: string, user: string}
+}
+```
+
+### Helper Methods
+
+The GameState object provides convenient helper methods:
+
+- `isOffline()` - Check if in offline mode
+- `isInProgress()` - Check if game is active
+- `isWordHolder()` - Check if current player holds the word
+- `isClueGiver()` - Check if current player gives clues
+- `hasSubmitted()` - Check if player submitted a clue (derived from submissions)
+- `getOwnSubmission()` - Get current player's submitted clue
+- `reset()` - Clear all game state
+- `startNewGame(word, language, role)` - Initialize new game
+
+### State Benefits
+
+This unified approach provides several advantages:
+- **Single source of truth** - All state in one organized object
+- **No duplicate tracking** - `hasSubmitted()` is derived from submissions array
+- **Cleaner code** - Helper methods reduce repetitive state checks
+- **Easier debugging** - Complete state visible in one place
+- **Better maintainability** - Logical grouping makes updates simpler
+
+The word display state combines what were previously separate `wordRevealed` and `wordBlurred` booleans into a single enum, preventing impossible states and making the display logic clearer.
+
 Enjoy playing Just One with your friends and family!

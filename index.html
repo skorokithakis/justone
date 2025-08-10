@@ -15,6 +15,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+Mono+TC&display=swap" rel="stylesheet">
   <title>Just One</title>
+  <script src="./game.js"></script>
 </head>
 
 <body>
@@ -129,26 +130,13 @@
     const clueInner = document.getElementById('clueInner');
     const clueField = document.getElementById('clueField');
 
-    let currentWord = '';
-    let currentView = 'menu';
-    let currentLang = 'en';
-    let countdownId = null;
-    let wordBlurred = false;
-    let wordRevealed = false;
-
-    // Multiplayer state
-    let clientUUID = '';
-    let roomCode = '';
-    let gweetController = null;
-    let submittedWords = [];
-    let hasSubmittedWord = false;
-    let currentUserRole = null; // 'wordHolder' or 'clueGiver' or null
-    let netState = "ENDED"; // Network state: "OFFLINE", "IN_PROGRESS", "ENDED"
+    // Use unified GameState from game.js
+    const state = window.GameState;
 
     // Language picker
     document.querySelectorAll('[name="lang"]').forEach(radio => {
       radio.addEventListener('change', e => {
-        currentLang = e.target.value;
+        state.game.language = e.target.value;
       });
     });
 
@@ -190,14 +178,6 @@
       return matrix[b.length][a.length];
     }
 
-    // Generate UUID for client identification
-    function generateUUID() {
-      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-        const r = Math.random() * 16 | 0;
-        const v = c === 'x' ? r : (r & 0x3 | 0x8);
-        return v.toString(16);
-      });
-    }
 
     // Generate room code
     function generateRoomCode() {
@@ -209,8 +189,6 @@
       return code;
     }
 
-    // Initialize client UUID on load
-    clientUUID = generateUUID();
 
     // Room management
     const roomBadge = document.getElementById('roomBadge');
@@ -232,8 +210,8 @@
 
     // Room badge click handler
     roomBadge.addEventListener('click', () => {
-      if (roomCode) {
-        navigator.clipboard.writeText(roomCode).then(() => {
+      if (state.network.roomCode) {
+        navigator.clipboard.writeText(state.network.roomCode).then(() => {
           const originalText = roomBadge.textContent;
           roomBadge.textContent = 'Copied!';
           setTimeout(() => {
@@ -270,7 +248,7 @@
 
     // Offline mode button
     document.getElementById('offlineBtn').addEventListener('click', () => {
-      netState = "OFFLINE";
+      state.network.status = "OFFLINE";
       roomModal.classList.add('hidden');
       // Don't show the room badge in offline mode
       roomBadge.classList.add('hidden');
@@ -280,7 +258,7 @@
 
     // Connect to room
     function connectToRoom(code) {
-      roomCode = code;
+      state.network.roomCode = code;
       roomBadge.textContent = `Room: ${code}`;
       roomBadge.classList.remove('hidden');
       roomModal.classList.add('hidden');
@@ -293,15 +271,15 @@
     // Gweet connection management
     async function connectToGweet() {
       // Skip in offline mode
-      if (netState === "OFFLINE") return;
+      if (state.isOffline()) return;
 
       // Disconnect existing connection
-      if (gweetController) {
-        gweetController.abort();
+      if (state.network.controller) {
+        state.network.controller.abort();
       }
 
-      const channelKey = `justone-stavros-${roomCode.toLowerCase()}`;
-      gweetController = new AbortController();
+      const channelKey = `justone-stavros-${state.network.roomCode.toLowerCase()}`;
+      state.network.controller = new AbortController();
 
       try {
         // Fetch historical messages
@@ -323,7 +301,7 @@
               break;
             }
           }
-          
+
           // Process messages after last endRound (or all if no endRound found)
           for (let i = lastEndRoundIdx + 1; i < historyData.messages.length; i++) {
             const msg = historyData.messages[i];
@@ -336,7 +314,7 @@
         // Establish streaming connection
         const streamResponse = await fetch(
           `https://gweet.stavros.io/stream/${channelKey}/?streaming=1`,
-          { signal: gweetController.signal }
+          { signal: state.network.controller.signal }
         );
 
         const reader = streamResponse.body.getReader();
@@ -369,7 +347,7 @@
           console.error('Gweet connection error:', error);
           // Retry after 5 seconds
           setTimeout(() => {
-            if (roomCode) {
+            if (state.network.roomCode) {
               connectToGweet();
             }
           }, 5000);
@@ -406,22 +384,21 @@
       // Process based on message type
       if (type === 'newGame') {
         // Set network state to IN_PROGRESS
-        netState = "IN_PROGRESS";
+        state.network.status = "IN_PROGRESS";
 
         // Set current user's role
-        if (user === clientUUID) {
-          currentUserRole = 'wordHolder';
+        if (user === state.network.clientId) {
+          state.network.userRole = 'wordHolder';
         } else {
-          currentUserRole = 'clueGiver';
-          currentWord = word;
-          currentLang = lang || 'en';
+          state.network.userRole = 'clueGiver';
+          state.game.word = word;
+          state.game.language = lang || 'en';
           // Update language selector
-          document.querySelector(`[name="lang"][value="${currentLang}"]`).checked = true;
+          document.querySelector(`[name="lang"][value="${state.game.language}"]`).checked = true;
         }
 
         // Reset submitted words
-        submittedWords = [];
-        hasSubmittedWord = false;
+        state.submissions = [];
         updateSubmittedWordsDisplay();
 
         // Update button visibility
@@ -430,8 +407,8 @@
         // Word submitted by a player
         const submission = { word, user };
         // Check if this word hasn't been added already
-        if (!submittedWords.some(s => s.word === word && s.user === user)) {
-          submittedWords.push(submission);
+        if (!state.submissions.some(s => s.word === word && s.user === user)) {
+          state.submissions.push(submission);
           updateSubmittedWordsDisplay();
         }
       } else if (type === 'endRound') {
@@ -442,13 +419,13 @@
 
     // Send message to Gweet
     async function sendGweetMessage(message) {
-      if (!roomCode || netState === "OFFLINE") return;
+      if (!state.network.roomCode || state.network.status === "OFFLINE") return;
 
-      const channelKey = `justone-stavros-${roomCode.toLowerCase()}`;
+      const channelKey = `justone-stavros-${state.network.roomCode.toLowerCase()}`;
       const params = new URLSearchParams();
 
       // Add user UUID to all messages
-      params.append('user', clientUUID);
+      params.append('user', state.network.clientId);
 
       // Add message fields
       for (const [key, value] of Object.entries(message)) {
@@ -470,7 +447,7 @@
 
     // Update submitted words display
     function updateSubmittedWordsDisplay() {
-      if (!hasSubmittedWord) {
+      if (!state.hasSubmitted()) {
         submittedWordsDiv.classList.add('hidden');
         return;
       }
@@ -480,13 +457,13 @@
 
       // Show the word display
       currentWordDisplay.classList.remove('hidden');
-      currentWordDisplay.textContent = currentWord ? `Word: ${currentWord}` : '';
+      currentWordDisplay.textContent = state.game.word ? `Word: ${state.game.word}` : '';
 
       // Clear and rebuild the list
       wordsList.innerHTML = '';
 
       // Get own submission for distance calculations
-      const ownSubmission = submittedWords.find(s => s.user === clientUUID);
+      const ownSubmission = state.getOwnSubmission();
 
       // Show own word first
       if (ownSubmission) {
@@ -497,8 +474,8 @@
       }
 
       // Show other words with distance-based coloring
-      submittedWords
-        .filter(s => s.user !== clientUUID)
+      state.submissions
+        .filter(s => s.user !== state.network.clientId)
         .forEach(submission => {
           const li = document.createElement('li');
           li.textContent = submission.word;
@@ -530,26 +507,8 @@
 
     // Handle ending the round (clears state and returns to menu)
     function handleEndRound() {
-      // Set network state to ENDED (if not offline)
-      if (netState !== "OFFLINE") {
-        netState = "ENDED";
-      }
-
-      // Clear word state
-      currentWord = '';
-      submittedWords = [];
-      hasSubmittedWord = false;
-      wordRevealed = false;
-      wordBlurred = false;
-
-      // Clear user roles
-      currentUserRole = null;
-
-      // Clear any countdown
-      if (countdownId) {
-        clearInterval(countdownId);
-        countdownId = null;
-      }
+      // Use the GameState reset method
+      state.reset();
 
       // Reset visual states
       wordInner.classList.remove('blurred');
@@ -592,7 +551,7 @@
         case 'clueIn': clueInput.classList.remove('hidden'); break;
         case 'clue': clueDisplay.classList.remove('hidden'); break;
       }
-      currentView = view;
+      state.view.current = view;
 
       // Update all button visibility based on current state
       updateButtonVisibility();
@@ -620,29 +579,29 @@
       const btnClue = document.getElementById('btnClue');
 
       // Simplified button state logic
-      const isOffline = netState === "OFFLINE";
-      const isInProgress = netState === "IN_PROGRESS";
-      const isWordHolder = currentUserRole === 'wordHolder';
-      const isClueGiver = currentUserRole === 'clueGiver';
+      const isOffline = state.network.status === "OFFLINE";
+      const isInProgress = state.network.status === "IN_PROGRESS";
+      const isWordHolder = state.network.userRole === 'wordHolder';
+      const isClueGiver = state.network.userRole === 'clueGiver';
 
       // Set button states
-      btnWord.classList.toggle('disabled', 
+      btnWord.classList.toggle('disabled',
         !isOffline && isInProgress && !isWordHolder);
-      btnClue.classList.toggle('disabled', 
-        !isOffline && (netState === "ENDED" || (isInProgress && !isClueGiver)));
+      btnClue.classList.toggle('disabled',
+        !isOffline && (state.network.status === "ENDED" || (isInProgress && !isClueGiver)));
 
       // End Round button visibility
-      const showEndRound = isInProgress && !isOffline && 
-        (currentView === 'menu' || currentView === 'word' || currentView === 'clue');
+      const showEndRound = isInProgress && !isOffline &&
+        (state.view.current === 'menu' || state.view.current === 'word' || state.view.current === 'clue');
       endRoundBtn.classList.toggle('hidden', !showEndRound);
     }
 
     // Get Word button
     document.getElementById('btnWord').onclick = () => {
       // In offline mode, always allow getting a new word
-      if (netState === "OFFLINE") {
-        const pool = currentLang === 'en' ? englishWords : greekWords;
-        currentWord = pool[Math.floor(Math.random() * pool.length)];
+      if (state.network.status === "OFFLINE") {
+        const pool = state.game.language === 'en' ? englishWords : greekWords;
+        state.game.word = pool[Math.floor(Math.random() * pool.length)];
 
         show('word');
         enterFullscreen();
@@ -650,17 +609,16 @@
         let seconds = 2;
         wordInner.textContent = seconds;
         fitText(wordInner);
-        wordRevealed = false;
-        wordBlurred = false;
+        state.game.wordDisplay = 'countdown';
 
-        if (countdownId) clearInterval(countdownId);
-        countdownId = setInterval(() => {
+        if (state.game.countdownTimer) clearInterval(state.game.countdownTimer);
+        state.game.countdownTimer = setInterval(() => {
           seconds--;
           if (seconds <= 0) {
-            clearInterval(countdownId);
-            countdownId = null;
-            wordInner.textContent = currentWord;
-            wordRevealed = true;
+            clearInterval(state.game.countdownTimer);
+            state.game.countdownTimer = null;
+            wordInner.textContent = state.game.word;
+            state.game.wordDisplay = 'visible';
           } else {
             wordInner.textContent = seconds;
           }
@@ -670,40 +628,35 @@
       }
 
       // Check if user is the word holder returning to their word
-      if (netState === "IN_PROGRESS" && currentUserRole === 'wordHolder') {
+      if (state.network.status === "IN_PROGRESS" && state.network.userRole === 'wordHolder') {
         // Return to the existing word
         show('word');
         enterFullscreen();
-        wordInner.textContent = currentWord;
-        wordRevealed = true;
+        wordInner.textContent = state.game.word;
+        state.game.wordDisplay = 'visible';
         fitText(wordInner);
         return;
       }
 
       // Check if a game is already in progress (and user is not word holder)
-      if (netState === "IN_PROGRESS") {
+      if (state.network.status === "IN_PROGRESS") {
         // Button should be disabled for clue givers
         return;
       }
 
       // Start a new game
-      const pool = currentLang === 'en' ? englishWords : greekWords;
-      currentWord = pool[Math.floor(Math.random() * pool.length)];
+      const pool = state.game.language === 'en' ? englishWords : greekWords;
+      const newWord = pool[Math.floor(Math.random() * pool.length)];
 
-      // Set game state
-      currentUserRole = 'wordHolder';
-      netState = "IN_PROGRESS";
-
-      // Reset submitted words for new game
-      submittedWords = [];
-      hasSubmittedWord = false;
+      // Use GameState helper method
+      state.startNewGame(newWord, state.game.language, 'wordHolder');
       updateSubmittedWordsDisplay();
 
       // Send new game message to other players
       sendGweetMessage({
         type: 'newGame',
-        word: currentWord,
-        lang: currentLang
+        word: newWord,
+        lang: state.game.language
       });
 
       show('word');
@@ -712,17 +665,16 @@
       let seconds = 2;
       wordInner.textContent = seconds;
       fitText(wordInner);
-      wordRevealed = false;
-      wordBlurred = false;
+      state.game.wordDisplay = 'countdown';
 
-      if (countdownId) clearInterval(countdownId);
-      countdownId = setInterval(() => {
+      if (state.game.countdownTimer) clearInterval(state.game.countdownTimer);
+      state.game.countdownTimer = setInterval(() => {
         seconds--;
         if (seconds <= 0) {
-          clearInterval(countdownId);
-          countdownId = null;
-          wordInner.textContent = currentWord;
-          wordRevealed = true;
+          clearInterval(state.game.countdownTimer);
+          state.game.countdownTimer = null;
+          wordInner.textContent = state.game.word;
+          state.game.wordDisplay = 'visible';
         } else {
           wordInner.textContent = seconds;
         }
@@ -733,9 +685,10 @@
     // Word screen tap-to-blur functionality
     const wordText = document.getElementById('wordText');
     wordText.addEventListener('click', () => {
-      if (currentView === 'word' && wordRevealed) {
-        wordBlurred = !wordBlurred;
-        if (wordBlurred) {
+      if (state.view.current === 'word' && state.game.wordDisplay === 'visible') {
+        // Toggle between visible and blurred
+        state.game.wordDisplay = state.game.wordDisplay === 'blurred' ? 'visible' : 'blurred';
+        if (state.game.wordDisplay === 'blurred') {
           wordInner.classList.add('blurred');
           wordText.classList.add('word-blurred');
         } else {
@@ -753,7 +706,7 @@
     // Type Clue button
     document.getElementById('btnClue').onclick = () => {
       // In offline mode, always allow typing a clue
-      if (netState === "OFFLINE") {
+      if (state.network.status === "OFFLINE") {
         clueField.value = '';
         show('clueIn');
         // Focus the input field after the view is shown
@@ -766,12 +719,12 @@
       }
 
       // Check if not in a game or not a clue giver
-      if (netState !== "IN_PROGRESS" || currentUserRole !== 'clueGiver') {
+      if (state.network.status !== "IN_PROGRESS" || state.network.userRole !== 'clueGiver') {
         return;
       }
 
       // If user has already submitted a word, show the submitted words modal
-      if (hasSubmittedWord) {
+      if (state.hasSubmitted()) {
         show('clueIn');
         updateSubmittedWordsDisplay();
       } else {
@@ -822,7 +775,7 @@
       if (/\s/.test(val)) { alert('One word only!'); return; }
 
       // In offline mode, go straight to showing the clue
-      if (netState === "OFFLINE") {
+      if (state.network.status === "OFFLINE") {
         clueInner.textContent = val;
         show('clue');
         enterFullscreen();
@@ -832,7 +785,7 @@
       }
 
       // Check if there's a word in the channel
-      if (!currentWord) {
+      if (!state.game.word) {
         alert('No word to give a clue for! Someone needs to start a new game first.');
         return;
       }
@@ -844,8 +797,7 @@
       });
 
       // Add to local submitted words
-      submittedWords.push({ word: val, user: clientUUID });
-      hasSubmittedWord = true;
+      state.submissions.push({ word: val, user: state.network.clientId });
 
       // Store the clue but don't show it yet
       clueInner.textContent = val;
@@ -861,16 +813,18 @@
     function goBackToMenu() {
       // No confirmation needed since we're preserving state
 
-      if (countdownId) {
-        clearInterval(countdownId);
-        countdownId = null;
+      if (state.game.countdownTimer) {
+        clearInterval(state.game.countdownTimer);
+        state.game.countdownTimer = null;
       }
 
       // Reset blur state but keep the word (don't clear it)
-      if (currentView === 'word') {
-        wordBlurred = false;
-        wordInner.classList.remove('blurred');
-        document.getElementById('wordText').classList.remove('word-blurred');
+      if (state.view.current === 'word') {
+        if (state.game.wordDisplay === 'blurred') {
+          state.game.wordDisplay = 'visible';
+          wordInner.classList.remove('blurred');
+          document.getElementById('wordText').classList.remove('word-blurred');
+        }
       }
 
       // Hide submitted words modal when returning to menu
@@ -892,14 +846,14 @@
 
     // Event listeners for dynamic resizing
     window.addEventListener('resize', () => {
-      if (currentView === 'word') fitText(wordInner);
-      if (currentView === 'clue') fitText(clueInner);
+      if (state.view.current === 'word') fitText(wordInner);
+      if (state.view.current === 'clue') fitText(clueInner);
     });
 
     window.addEventListener('orientationchange', () => {
       setTimeout(() => {
-        if (currentView === 'word') fitText(wordInner);
-        if (currentView === 'clue') fitText(clueInner);
+        if (state.view.current === 'word') fitText(wordInner);
+        if (state.view.current === 'clue') fitText(clueInner);
       }, 100);
     });
 
@@ -926,7 +880,7 @@
     // Confirmation when navigating away during active game
     window.addEventListener('beforeunload', (e) => {
       // Show confirmation if game is in progress (not in offline mode or ended state)
-      if (netState === "IN_PROGRESS") {
+      if (state.network.status === "IN_PROGRESS") {
         // Cancel the event as stated by the standard
         e.preventDefault();
         // Chrome requires returnValue to be set
