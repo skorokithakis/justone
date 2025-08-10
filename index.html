@@ -560,7 +560,7 @@
     let lastEndRoundTime = null;
     let wordHolderUUID = null; // Track who has the word
     let currentUserRole = null; // 'wordHolder' or 'clueGiver' or null
-    let isOfflineMode = false; // Track offline mode
+    let netState = "ENDED"; // Network state: "OFFLINE", "IN_PROGRESS", "ENDED"
 
     // Language picker
     document.querySelectorAll('[name="lang"]').forEach(radio => {
@@ -687,7 +687,7 @@
 
     // Offline mode button
     document.getElementById('offlineBtn').addEventListener('click', () => {
-      isOfflineMode = true;
+      netState = "OFFLINE";
       roomModal.classList.add('hidden');
       // Don't show the room badge in offline mode
       roomBadge.classList.add('hidden');
@@ -712,7 +712,7 @@
     // Gweet connection management
     async function connectToGweet() {
       // Skip in offline mode
-      if (isOfflineMode) return;
+      if (netState === "OFFLINE") return;
 
       // Disconnect existing connection
       if (gweetController) {
@@ -728,11 +728,11 @@
         const historyData = await historyResponse.json();
 
         // Process historical messages (filter by age)
-        const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+        const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
         if (historyData.messages) {
           // Filter messages by age first
           const recentMessages = historyData.messages.filter(msg =>
-            new Date(msg.created) >= oneHourAgo
+            new Date(msg.created) >= tenMinutesAgo
           );
 
           // Find the last endRound message
@@ -839,6 +839,9 @@
         // Track who has the word
         wordHolderUUID = user;
 
+        // Set network state to IN_PROGRESS
+        netState = "IN_PROGRESS";
+
         // Set current user's role
         if (user === clientUUID) {
           currentUserRole = 'wordHolder';
@@ -869,6 +872,9 @@
         // Track timing of end round
         lastEndRoundTime = Date.now();
 
+        // Set network state to ENDED
+        netState = "ENDED";
+
         // Round ended by another player
         handleEndRound();
       }
@@ -876,7 +882,7 @@
 
     // Send message to Gweet
     async function sendGweetMessage(message) {
-      if (!roomCode || isOfflineMode) return;
+      if (!roomCode || netState === "OFFLINE") return;
 
       const channelKey = `justone-stavros-${roomCode.toLowerCase()}`;
       const params = new URLSearchParams();
@@ -975,6 +981,11 @@
       wordHolderUUID = null;
       currentUserRole = null;
 
+      // Set network state to ENDED (if not offline)
+      if (netState !== "OFFLINE") {
+        netState = "ENDED";
+      }
+
       // Clear timing state - important for proper game state detection
       lastNewGameTime = null;
       lastEndRoundTime = null;
@@ -1006,6 +1017,9 @@
 
       // Track the end round timing
       lastEndRoundTime = Date.now();
+
+      // Set network state to ENDED
+      netState = "ENDED";
 
       // Send endRound message to other players
       sendGweetMessage({
@@ -1053,39 +1067,24 @@
       }
     }
 
-    // Check if a game is currently in progress
-    function isGameInProgress() {
-      // No game has been started yet
-      if (!lastNewGameTime) {
-        return false;
-      }
-
-      // If there's been an endRound after the last newGame, no game is in progress
-      if (lastEndRoundTime && lastEndRoundTime > lastNewGameTime) {
-        return false;
-      }
-
-      // If there's been a newGame but no endRound after it, game is in progress
-      return true;
-    }
 
     // Update button visibility based on user role and game state
     function updateButtonVisibility() {
       const btnWord = document.getElementById('btnWord');
       const btnClue = document.getElementById('btnClue');
 
-      if (isOfflineMode) {
+      if (netState === "OFFLINE") {
         // Offline mode - both buttons always enabled
         btnWord.classList.remove('disabled');
         btnClue.classList.remove('disabled');
         // Hide End Round button in offline mode
         endRoundBtn.classList.add('hidden');
-      } else if (!isGameInProgress()) {
+      } else if (netState === "ENDED") {
         // No game in progress - anyone can start a new game
         btnWord.classList.remove('disabled');
         btnClue.classList.add('disabled');
         endRoundBtn.classList.add('hidden');
-      } else {
+      } else if (netState === "IN_PROGRESS") {
         // Game in progress - show End Round button
         if (currentView === 'menu' || currentView === 'word' || currentView === 'clue') {
           endRoundBtn.classList.remove('hidden');
@@ -1112,7 +1111,7 @@
     // Get Word button
     document.getElementById('btnWord').onclick = () => {
       // In offline mode, always allow getting a new word
-      if (isOfflineMode) {
+      if (netState === "OFFLINE") {
         const pool = currentLang === 'en' ? englishWords : greekWords;
         currentWord = pool[Math.floor(Math.random() * pool.length)];
 
@@ -1142,7 +1141,7 @@
       }
 
       // Check if user is the word holder returning to their word
-      if (isGameInProgress() && currentUserRole === 'wordHolder') {
+      if (netState === "IN_PROGRESS" && currentUserRole === 'wordHolder') {
         // Return to the existing word
         show('word');
         enterFullscreen();
@@ -1153,7 +1152,7 @@
       }
 
       // Check if a game is already in progress (and user is not word holder)
-      if (isGameInProgress()) {
+      if (netState === "IN_PROGRESS") {
         // Button should be disabled for clue givers
         return;
       }
@@ -1166,6 +1165,7 @@
       lastNewGameTime = Date.now();
       wordHolderUUID = clientUUID;
       currentUserRole = 'wordHolder';
+      netState = "IN_PROGRESS";
 
       // Reset submitted words for new game
       submittedWords = [];
@@ -1226,7 +1226,7 @@
     // Type Clue button
     document.getElementById('btnClue').onclick = () => {
       // In offline mode, always allow typing a clue
-      if (isOfflineMode) {
+      if (netState === "OFFLINE") {
         clueField.value = '';
         show('clueIn');
         // Focus the input field after the view is shown
@@ -1239,7 +1239,7 @@
       }
 
       // Check if not in a game or not a clue giver
-      if (!isGameInProgress() || currentUserRole !== 'clueGiver') {
+      if (netState !== "IN_PROGRESS" || currentUserRole !== 'clueGiver') {
         return;
       }
 
@@ -1295,7 +1295,7 @@
       if (/\s/.test(val)) { alert('One word only!'); return; }
 
       // In offline mode, go straight to showing the clue
-      if (isOfflineMode) {
+      if (netState === "OFFLINE") {
         clueInner.textContent = val;
         show('clue');
         enterFullscreen();
