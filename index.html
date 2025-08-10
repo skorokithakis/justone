@@ -140,28 +140,36 @@
       });
     });
 
+    // Maximum Levenshtein distance to consider (configurable)
+    const MAX_DISTANCE = 2;
+
     // Calculate Levenshtein distance between two strings (case-insensitive)
+    // Returns distance up to MAX_DISTANCE, or Infinity if distance > MAX_DISTANCE
     function levenshteinDistance(string_a, string_b) {
       const a = string_a.toLowerCase();
       const b = string_b.toLowerCase();
 
-      if (a.length === 0) return b.length;
-      if (b.length === 0) return a.length;
+      if (a.length === 0) return b.length > MAX_DISTANCE ? Infinity : b.length;
+      if (b.length === 0) return a.length > MAX_DISTANCE ? Infinity : a.length;
+
+      // Early exit if length difference > MAX_DISTANCE
+      if (Math.abs(a.length - b.length) > MAX_DISTANCE) return Infinity;
 
       const matrix = [];
 
-      // Initialize the first column
+      // Initialize the first column (up to MAX_DISTANCE)
       for (let i = 0; i <= b.length; i++) {
-        matrix[i] = [i];
+        matrix[i] = [Math.min(i, MAX_DISTANCE + 1)];
       }
 
-      // Initialize the first row
+      // Initialize the first row (up to MAX_DISTANCE)
       for (let j = 0; j <= a.length; j++) {
-        matrix[0][j] = j;
+        matrix[0][j] = Math.min(j, MAX_DISTANCE + 1);
       }
 
-      // Calculate distances
+      // Calculate distances with early termination
       for (let i = 1; i <= b.length; i++) {
+        let rowMin = Infinity;
         for (let j = 1; j <= a.length; j++) {
           if (b.charAt(i - 1) === a.charAt(j - 1)) {
             matrix[i][j] = matrix[i - 1][j - 1];
@@ -172,10 +180,23 @@
               matrix[i - 1][j] + 1      // deletion
             );
           }
+
+          // Cap at MAX_DISTANCE + 1 (anything > MAX_DISTANCE is treated as infinity)
+          if (matrix[i][j] > MAX_DISTANCE) {
+            matrix[i][j] = MAX_DISTANCE + 1;
+          }
+
+          rowMin = Math.min(rowMin, matrix[i][j]);
+        }
+
+        // Early termination: if entire row > MAX_DISTANCE, result will be > MAX_DISTANCE
+        if (rowMin > MAX_DISTANCE) {
+          return Infinity;
         }
       }
 
-      return matrix[b.length][a.length];
+      const distance = matrix[b.length][a.length];
+      return distance > MAX_DISTANCE ? Infinity : distance;
     }
 
 
@@ -482,7 +503,7 @@
 
           // Calculate minimum distance from this word to all other words
           let minDistance = Infinity;
-          
+
           // Compare against all other submissions (including own)
           state.submissions.forEach(otherSubmission => {
             if (otherSubmission.word !== submission.word) {
@@ -492,10 +513,10 @@
           });
 
           // Apply appropriate class based on minimum distance
-          if (minDistance <= 4) {
+          if (minDistance <= MAX_DISTANCE) {
             li.className = `distance-${minDistance}`;
           }
-          // Distance > 4 gets default grey background from base .word-list li style
+          // Distance > MAX_DISTANCE gets default grey background from base .word-list li style
 
           wordsList.appendChild(li);
         });
