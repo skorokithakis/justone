@@ -480,14 +480,22 @@
           const li = document.createElement('li');
           li.textContent = submission.word;
 
-          // Calculate distance and apply appropriate class
-          if (ownSubmission) {
-            const distance = levenshteinDistance(ownSubmission.word, submission.word);
-            if (distance <= 4) {
-              li.className = `distance-${distance}`;
+          // Calculate minimum distance from this word to all other words
+          let minDistance = Infinity;
+          
+          // Compare against all other submissions (including own)
+          state.submissions.forEach(otherSubmission => {
+            if (otherSubmission.word !== submission.word) {
+              const distance = levenshteinDistance(submission.word, otherSubmission.word);
+              minDistance = Math.min(minDistance, distance);
             }
-            // Distance > 4 gets default grey background from base .word-list li style
+          });
+
+          // Apply appropriate class based on minimum distance
+          if (minDistance <= 4) {
+            li.className = `distance-${minDistance}`;
           }
+          // Distance > 4 gets default grey background from base .word-list li style
 
           wordsList.appendChild(li);
         });
