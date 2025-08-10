@@ -506,7 +506,7 @@
 
           // Compare against all other submissions (including own)
           state.submissions.forEach(otherSubmission => {
-            if (otherSubmission.word !== submission.word) {
+            if (otherSubmission !== submission) {
               const distance = levenshteinDistance(submission.word, otherSubmission.word);
               minDistance = Math.min(minDistance, distance);
             }
