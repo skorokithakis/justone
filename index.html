@@ -1395,6 +1395,19 @@
       document.addEventListener('fullscreenchange', updateFSIcon);
       updateFSIcon();
     }
+
+    // Confirmation when navigating away during active game
+    window.addEventListener('beforeunload', (e) => {
+      // Show confirmation if game is in progress (not in offline mode or ended state)
+      if (netState === "IN_PROGRESS") {
+        // Cancel the event as stated by the standard
+        e.preventDefault();
+        // Chrome requires returnValue to be set
+        e.returnValue = '';
+        // Return a string for older browsers
+        return 'Are you sure you want to leave? A game is currently in progress.';
+      }
+    });
   </script>
 </body>
 </html>
