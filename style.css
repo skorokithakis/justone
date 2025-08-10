@@ -184,6 +184,61 @@ button.disabled {
   background: #ff9aa2;
 }
 
+/* Hold progress indicator */
+.hold-progress {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 80px;
+  height: 80px;
+  pointer-events: none;
+  z-index: 1000;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.hold-progress.active {
+  opacity: 1;
+}
+
+.hold-progress svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.hold-progress-background {
+  fill: none;
+  stroke: rgba(255, 179, 186, 0.3);
+  stroke-width: 8;
+}
+
+.hold-progress-ring {
+  fill: none;
+  stroke: #ffb3ba;
+  stroke-width: 8;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.05s linear;
+}
+
+/* Pulse animation when hold starts */
+@keyframes holdPulse {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+.hold-progress.pulse {
+  animation: holdPulse 0.3s ease-out;
+}
+
 /* Back Button */
 #backBtn {
   position: fixed;

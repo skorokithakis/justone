@@ -745,26 +745,184 @@
       }, 1000);
     };
 
-    // Word screen tap-to-blur functionality
+    // Create hold progress indicator
+    const createProgressIndicator = () => {
+      const indicator = document.createElement('div');
+      indicator.className = 'hold-progress';
+      indicator.id = 'holdProgress';
+
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('viewBox', '0 0 100 100');
+
+      // Background circle
+      const bgCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      bgCircle.setAttribute('cx', '50');
+      bgCircle.setAttribute('cy', '50');
+      bgCircle.setAttribute('r', '40');
+      bgCircle.className = 'hold-progress-background';
+
+      // Progress circle
+      const progressCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      progressCircle.setAttribute('cx', '50');
+      progressCircle.setAttribute('cy', '50');
+      progressCircle.setAttribute('r', '40');
+      progressCircle.className = 'hold-progress-ring';
+      progressCircle.id = 'holdProgressRing';
+
+      // Set up stroke dasharray for progress animation
+      const circumference = 2 * Math.PI * 40;
+      progressCircle.style.strokeDasharray = `${circumference} ${circumference}`;
+      progressCircle.style.strokeDashoffset = circumference;
+
+      svg.appendChild(bgCircle);
+      svg.appendChild(progressCircle);
+      indicator.appendChild(svg);
+      document.body.appendChild(indicator);
+
+      return { indicator, progressCircle, circumference };
+    };
+
+    const { indicator: holdIndicator, progressCircle, circumference } = createProgressIndicator();
+
+    // Word screen hold-to-blur functionality
     const wordText = document.getElementById('wordText');
-    wordText.addEventListener('click', () => {
-      if (state.view.current === 'word' && state.game.wordDisplay === 'visible') {
-        // Toggle between visible and blurred
-        state.game.wordDisplay = state.game.wordDisplay === 'blurred' ? 'visible' : 'blurred';
-        if (state.game.wordDisplay === 'blurred') {
-          wordInner.classList.add('blurred');
-          wordText.classList.add('word-blurred');
-        } else {
-          wordInner.classList.remove('blurred');
-          wordText.classList.remove('word-blurred');
-        }
+    let holdStartTime = 0;
+
+    const startHold = () => {
+      if (state.view.current !== 'word') {
+        return;
+      }
+
+      // If currently visible, blur immediately without hold
+      if (state.game.wordDisplay === 'visible') {
+        state.game.wordDisplay = 'blurred';
+        wordInner.classList.add('blurred');
+        wordText.classList.add('word-blurred');
 
         // Haptic feedback
         if (navigator.vibrate) {
-          navigator.vibrate(50); // Vibrate for 50ms
+          navigator.vibrate(50);
         }
+        return;
       }
+
+      // Only require hold when unblurring (blurred -> visible)
+      if (state.game.wordDisplay !== 'blurred') {
+        return;
+      }
+
+      // Clean up any existing hold state
+      if (state.game.holdTimer) {
+        clearTimeout(state.game.holdTimer);
+      }
+      if (state.game.holdAnimationFrame) {
+        cancelAnimationFrame(state.game.holdAnimationFrame);
+      }
+
+      state.game.isHolding = true;
+      state.game.holdProgress = 0;
+      holdStartTime = Date.now();
+
+      // Show progress indicator with pulse animation
+      holdIndicator.classList.add('active', 'pulse');
+      setTimeout(() => holdIndicator.classList.remove('pulse'), 300);
+
+      // Start progress animation
+      const animateProgress = () => {
+        if (!state.game.isHolding) return;
+
+        const elapsed = Date.now() - holdStartTime;
+        const progress = Math.min(elapsed / 500, 1); // 500ms hold duration
+        state.game.holdProgress = progress * 100;
+
+        // Update progress ring
+        const offset = circumference - (progress * circumference);
+        progressCircle.style.strokeDashoffset = offset;
+
+        if (progress < 1) {
+          state.game.holdAnimationFrame = requestAnimationFrame(animateProgress);
+        } else {
+          // Hold complete - toggle blur
+          completeHold();
+        }
+      };
+
+      state.game.holdAnimationFrame = requestAnimationFrame(animateProgress);
+
+      // Set timeout as backup for completion
+      state.game.holdTimer = setTimeout(() => {
+        if (state.game.isHolding) {
+          completeHold();
+        }
+      }, 500);
+    };
+
+    const cancelHold = () => {
+      if (!state.game.isHolding) return;
+
+      state.game.isHolding = false;
+      state.game.holdProgress = 0;
+
+      // Clean up timers
+      if (state.game.holdTimer) {
+        clearTimeout(state.game.holdTimer);
+        state.game.holdTimer = null;
+      }
+      if (state.game.holdAnimationFrame) {
+        cancelAnimationFrame(state.game.holdAnimationFrame);
+        state.game.holdAnimationFrame = null;
+      }
+
+      // Hide and reset progress indicator
+      holdIndicator.classList.remove('active');
+      progressCircle.style.strokeDashoffset = circumference;
+    };
+
+    const completeHold = () => {
+      if (!state.game.isHolding) return;
+
+      // Unblur the word (hold is only for unblurring)
+      state.game.wordDisplay = 'visible';
+      wordInner.classList.remove('blurred');
+      wordText.classList.remove('word-blurred');
+
+      // Haptic feedback
+      if (navigator.vibrate) {
+        navigator.vibrate(50);
+      }
+
+      // Clean up
+      cancelHold();
+    };
+
+    // Mouse events
+    wordText.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      startHold();
     });
+
+    wordText.addEventListener('mouseup', cancelHold);
+    wordText.addEventListener('mouseleave', cancelHold);
+
+    // Touch events
+    wordText.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      startHold();
+    });
+
+    wordText.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      cancelHold();
+    });
+
+    wordText.addEventListener('touchcancel', cancelHold);
+
+    // Cancel hold if view changes
+    const originalShow = show;
+    show = (viewName) => {
+      cancelHold();
+      originalShow(viewName);
+    };
 
     // Type Clue button
     document.getElementById('btnClue').onclick = () => {

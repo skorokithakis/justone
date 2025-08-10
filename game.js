@@ -6,6 +6,10 @@ const GameState = {
     language: 'en',     // Selected language
     wordDisplay: 'hidden', // 'hidden', 'countdown', 'visible', 'blurred'
     countdownTimer: null,  // Timer ID for countdown
+    holdTimer: null,       // Timer for 500ms hold duration
+    holdProgress: 0,       // Progress value (0-100) for animation
+    isHolding: false,      // Track current hold state
+    holdAnimationFrame: null, // Animation frame ID for progress animation
   },
 
   // View state
@@ -59,6 +63,17 @@ const GameState = {
       clearInterval(this.game.countdownTimer);
       this.game.countdownTimer = null;
     }
+    // Reset hold state
+    if (this.game.holdTimer) {
+      clearTimeout(this.game.holdTimer);
+      this.game.holdTimer = null;
+    }
+    if (this.game.holdAnimationFrame) {
+      cancelAnimationFrame(this.game.holdAnimationFrame);
+      this.game.holdAnimationFrame = null;
+    }
+    this.game.holdProgress = 0;
+    this.game.isHolding = false;
 
     // Reset network state (keep connection info)
     this.network.userRole = null;
