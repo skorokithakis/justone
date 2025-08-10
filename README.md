@@ -44,4 +44,44 @@ Just One is a cooperative party game where one player (the guesser) tries to gue
 - Mobile-optimized interface.
 - Festive animated background streamers.
 
+## Multiplayer Network Protocol
+
+The app uses Gweet (a lightweight message streaming service) to enable real-time multiplayer functionality. Players can join the same room and share game state across devices.
+
+### How it works
+
+#### Room System
+- Players join rooms using 4-letter codes (e.g., "ABCD")
+- Each room creates a unique Gweet channel: `justone-stavros-{roomcode}`
+- The room badge displays the current room code and can be clicked to copy it
+
+#### Message Types
+
+The protocol uses three message types sent via URL-encoded POST requests:
+
+1. **New Game** (`type=newGame`)
+   - Sent when a player starts a new round by clicking "Get Word"
+   - Contains: `word` (the mystery word), `lang` (language), `user` (UUID)
+   - Synchronizes the word across all players in the room
+
+2. **Submit Word** (`type=submitWord`) 
+   - Sent when a clue-giver submits their one-word clue
+   - Contains: `word` (the clue), `user` (UUID)
+   - Collects all submitted clues for display to the guesser
+
+3. **End Round** (`type=endRound`)
+   - Sent when any player clicks "End Round"
+   - Clears the game state and returns all players to the main menu
+
+#### Connection Management
+- The app establishes a streaming connection to Gweet on room join
+- Historical messages from the last hour are fetched on connection
+- Automatic reconnection after 5 seconds if the connection drops
+- Each client generates a unique UUID for identification
+
+#### Game State Tracking
+- Tracks timing of `newGame` and `endRound` events to determine if a game is in progress
+- Prevents starting a new game while one is active
+- Ensures proper state synchronization across all connected players
+
 Enjoy playing Just One with your friends and family!
