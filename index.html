@@ -20,7 +20,7 @@
       margin: 0;
       padding: 0;
     }
-    
+
     html, body {
       height: 100%;
       width: 100%;
@@ -33,7 +33,7 @@
       top: 0;
       left: 0;
     }
-    
+
     #app {
       width: 100dvw;
       height: 100dvh;
@@ -42,9 +42,9 @@
       position: relative;
       overflow: hidden;
     }
-    
+
     .hidden { display: none !important; }
-    
+
     /* Main Menu */
     #mainMenu {
       width: 100%;
@@ -56,18 +56,18 @@
       gap: 2rem;
       padding: 2rem;
     }
-    
+
     #langPicker {
       display: flex;
       gap: 1rem;
       margin-bottom: 1rem;
     }
-    
+
     #langPicker label {
       font-size: 1.2rem;
       cursor: pointer;
     }
-    
+
     button {
       font-family: "LXGW WenKai Mono TC", monospace;
       font-size: 1.5rem;
@@ -82,17 +82,17 @@
       min-height: 44px;
       min-width: 44px;
     }
-    
+
     button:hover, button:active {
       background: #ffc9c9;
     }
-    
+
     button.disabled {
       opacity: 0.5;
       pointer-events: none;
       cursor: not-allowed;
     }
-    
+
     /* Fullscreen Text Views */
     .fullscreenView {
       width: 100%;
@@ -109,7 +109,7 @@
       top: 0;
       left: 0;
     }
-    
+
     .fullscreenView span {
       display: block;
       font-size: 4rem;
@@ -117,7 +117,7 @@
       white-space: nowrap;
       text-overflow: ellipsis;
     }
-    
+
     /* Clue Input */
     #clueInput {
       width: 100%;
@@ -127,12 +127,12 @@
       align-items: center;
       padding: 2rem;
     }
-    
+
     #clueForm {
       width: 100%;
       max-width: 500px;
     }
-    
+
     .input-container {
       position: relative;
       width: 100%;
@@ -142,7 +142,7 @@
       background: white;
       height: 70px;
     }
-    
+
     #clueField {
       font-family: "LXGW WenKai Mono TC", monospace;
       font-size: 1.5rem;
@@ -155,7 +155,7 @@
       background: white;
       box-sizing: border-box;
     }
-    
+
     #submitBtn {
       position: absolute;
       top: 0;
@@ -174,7 +174,7 @@
       align-items: center;
       justify-content: center;
     }
-    
+
     #submitBtn:hover, #submitBtn:active {
       background: #ffc9c9;
     }
@@ -183,7 +183,7 @@
     #clueInner {
       font-weight: 900;
     }
-    
+
     /* Blur effect for word text */
     #wordText {
         transition: background 0.3s ease;
@@ -193,12 +193,12 @@
       filter: blur(60px);
       transition: filter 0.3s ease;
     }
-    
+
     /* Gray background when word is blurred */
     .word-blurred {
       background: #ff9aa2;
     }
-    
+
     /* Back Button */
     #backBtn {
       position: fixed;
@@ -215,11 +215,11 @@
       align-items: center;
       justify-content: center;
     }
-    
+
     #backBtn.hidden {
       display: none;
     }
-    
+
     /* Fullscreen Button */
     #fsBtn {
       position: fixed;
@@ -236,7 +236,7 @@
       align-items: center;
       justify-content: center;
     }
-    
+
     /* Room Badge */
     #roomBadge {
       position: fixed;
@@ -252,15 +252,15 @@
       cursor: pointer;
       transition: background 0.25s;
     }
-    
+
     #roomBadge:hover {
       background: #ffc9c9;
     }
-    
+
     #roomBadge.hidden {
       display: none;
     }
-    
+
     /* End Round Button */
     #endRoundBtn {
       position: fixed;
@@ -276,15 +276,15 @@
       cursor: pointer;
       transition: background 0.25s;
     }
-    
+
     #endRoundBtn:hover {
       background: #ffc9c9;
     }
-    
+
     #endRoundBtn.hidden {
       display: none;
     }
-    
+
     /* Room Modal */
     #roomModal {
       position: fixed;
@@ -299,11 +299,11 @@
       z-index: 100;
       padding: 2rem;
     }
-    
+
     #roomModal.hidden {
       display: none;
     }
-    
+
     .modal-content {
       background: white;
       padding: 2rem;
@@ -312,12 +312,12 @@
       width: 100%;
       text-align: center;
     }
-    
+
     .modal-content h2 {
       margin-bottom: 1.5rem;
       color: #2c3e50;
     }
-    
+
     .modal-content input {
       font-family: "LXGW WenKai Mono TC", monospace;
       font-size: 1.5rem;
@@ -329,18 +329,18 @@
       margin-bottom: 1rem;
       text-transform: uppercase;
     }
-    
+
     .modal-buttons {
       display: flex;
       gap: 1rem;
       justify-content: center;
     }
-    
+
     .modal-buttons button {
       font-size: 1.2rem;
       padding: 0.5rem 1.5rem;
     }
-    
+
     /* Submitted Words Display */
     #submittedWords {
       position: absolute;
@@ -357,22 +357,22 @@
       z-index: 5;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
     }
-    
+
     #submittedWords.hidden {
       display: none;
     }
-    
+
     #submittedWords h3 {
       margin-bottom: 1rem;
       color: #2c3e50;
       text-align: center;
     }
-    
+
     .word-list {
       list-style: none;
       padding: 0;
     }
-    
+
     .word-list li {
       padding: 0.5rem;
       margin-bottom: 0.5rem;
@@ -382,32 +382,32 @@
       text-align: center;
       transition: background 0.3s ease;
     }
-    
+
     .word-list li.own-word {
       background: #ffb3ba;
       font-weight: bold;
     }
-    
+
     .word-list li.distance-0 {
       background: #ffb3ba;
     }
-    
+
     .word-list li.distance-1 {
       background: #ffc4c4;
     }
-    
+
     .word-list li.distance-2 {
       background: #ffd5d5;
     }
-    
+
     .word-list li.distance-3 {
       background: #ffe6e6;
     }
-    
+
     .word-list li.distance-4 {
       background: #fff0f0;
     }
-    
+
     #currentWordDisplay {
       text-align: center;
       margin-bottom: 1rem;
@@ -418,11 +418,11 @@
       font-weight: bold;
       color: #2c3e50;
     }
-    
+
     #currentWordDisplay.hidden {
       display: none;
     }
-    
+
     #showClueBtn {
       width: 100%;
       margin-top: 1rem;
@@ -465,10 +465,10 @@
 
     <button id="backBtn" class="hidden">←</button>
     <button id="fsBtn" title="Toggle Fullscreen">⛶</button>
-    
+
     <div id="roomBadge" class="hidden"></div>
     <button id="endRoundBtn" class="hidden">End Round</button>
-    
+
     <div id="roomModal" class="hidden">
       <div class="modal-content">
         <h2>Join Room</h2>
@@ -479,7 +479,7 @@
         </div>
       </div>
     </div>
-    
+
     <div id="submittedWords" class="hidden">
       <h3>Submitted Words</h3>
       <div id="currentWordDisplay" class="hidden"></div>
@@ -492,35 +492,35 @@
     // Dynamic text scaling function (FitText.js-like)
     function fitText(element, minFontSize = 20, maxFontSize = 300) {
       if (!element || !element.textContent.trim()) return;
-      
+
       const container = element.parentElement;
       const containerWidth = container.clientWidth * 0.9;
       const containerHeight = container.clientHeight * 0.9;
-      
+
       let fontSize = minFontSize;
       element.style.fontSize = fontSize + 'px';
       element.style.whiteSpace = 'nowrap';
-      
+
       // Binary search for optimal font size
       let low = minFontSize;
       let high = maxFontSize;
-      
+
       while (low <= high) {
         fontSize = Math.floor((low + high) / 2);
         element.style.fontSize = fontSize + 'px';
-        
+
         if (element.scrollWidth <= containerWidth && element.scrollHeight <= containerHeight) {
           low = fontSize + 1;
         } else {
           high = fontSize - 1;
         }
       }
-      
+
       element.style.fontSize = high + 'px';
     }
 
     const englishWords=["Accent", "Acorn", "Aladdin", "Alarm", "Alcatraz", "Alcohol", "Alien", "Alliance", "Amazon", "America", "Anchor", "Angel", "Anniversary", "Antarctica", "Apple", "Armstrong", "Australia", "Avatar", "Baby", "Baker", "Bald", "Ball", "Ballet", "Banana", "Band", "Bar", "Barbecue", "Barbie", "Bath", "Batman", "Battery", "Beer", "Belgium", "Bellybutton", "Belt", "Berry", "Bet", "Binoculars", "Blond", "Board", "Bone", "Bonfire", "Book", "Boss", "Bottle", "Bow", "Bowling", "Boxing", "Bracelet", "Brain", "Branch", "Bread", "Bridge", "Brush", "Bubble", "Buffy", "Burrito", "Butterfly", "Button", "Cactus", "Caesar", "Cafeteria", "Cake", "Calendar", "Canada", "Candy", "Cane", "Cannon", "Canteen", "Canvas", "Carnival", "Carousel", "Carpet", "Carton", "Cartoon", "Casino", "Castle", "Cat", "Caterpillar", "Cave", "Cavity", "Cell", "Cemetery", "Cereal", "Chain", "Champagne", "Cheddar", "Cheese", "Chewbacca", "Chicken", "Chile", "Chip", "Chocolate", "Christmas", "Churchill", "Cigarette", "Cinderella", "Cinema", "Circus", "Cleopatra", "Climb", "Clover", "Club", "Cockroach", "Cocktail", "Cocoon", "Coffee", "Colonel", "Comedy", "Comforter", "Computer", "Concert", "Cookie", "Cork", "Corner", "Cougar", "Crane", "Crepe", "Crocodile", "Croissant", "Cross", "Crossroads", "Crown", "Cube", "Cup", "Cupid", "Cycle", "Dance", "Darwin", "Decathlon", "Defense", "Dentist", "Desert", "Devil", "Diamond", "Dinosaur", "Disco", "Doctor", "Doll", "Doping", "Dracula", "Drag", "Dream", "Dune", "Dwarf", "Easter", "Egg", "Elastic", "Election", "Electricity", "Elephant", "Elf", "Elvis", "Emergency", "Emperor", "End", "Evening", "Everest", "Explosion", "Facebook", "Failure", "Fair", "Fairy", "Fall", "Farm", "Fashion", "Fever", "Fire", "Firecracker", "Fireman", "Fitzgerald", "Flame", "Flash", "Flight", "Flintstone", "Flower", "Flute", "Foam", "Ford", "Forest", "Fork", "Fountain", "Fox", "France", "Frankenstein", "Friday", "Fries", "Frost", "Fur", "Galaxy", "Game", "Gandhi", "Garden", "Garlic", "Genius", "Ghost", "Giant", "Gladiator", "Glass", "Glasses", "Goal", "Godfather", "Godzilla", "Golf", "Google", "Gothic", "Grass", "Greece", "Gremlins", "Grenade", "Grotto", "Guard", "Guillotine", "Gumbo", "Hair", "Hairdresser", "Halloween", "Hammer", "Handle", "Hanukkah", "Hat", "Hazelnut", "Heart", "Heel", "Helicopter", "Helmet", "History", "Hockey", "Hole", "Hollywood", "Honey", "Hose", "Hotel", "House", "Hulk", "Human", "Humor", "Hunter", "Ice", "Ikea", "Iris", "Iron", "Island", "Israel", "Italy", "Jackson", "Jedi", "Jewelry", "Joker", "Jones", "Jungle", "Karate", "King", "Knife", "Knight", "Ladder", "Ladybug", "Lake", "Lamp", "Language", "Large", "Lava", "Lawyer", "Leaf", "Leap", "Lego", "Letter", "Light", "Lightbulb", "Lighthouse", "Lightning", "Limb", "Lion", "Lonely", "Lottery", "Machine", "Mad", "Mafia", "Magician", "Magnet", "Manual", "Manure", "Map", "Mario", "Market", "Marriage", "Mars", "Mask", "Matrix", "Melon", "Metal", "Mexico", "Mickey", "Microsoft", "Milk", "Mill", "Mirage", "Mirror", "Missile", "Monkey", "Monopoly", "Moon", "Moscow", "Mosquito", "Mountain", "Mouse", "Mouth", "Mower", "Mozart", "Mummy", "Muse", "Mushroom", "Music", "Musketeer", "Mustache", "Mustard", "Myth", "Nail", "Necklace", "Needle", "Neighborhood", "Nest", "New", "Newspaper", "Nile", "Ninja", "Nintendo", "Noodle", "Nuclear", "Number", "Nun", "Oasis", "Octopus", "Olympics", "Opera", "Operation", "Oprah", "Orange", "Oven", "Painting", "Pair", "Palace", "Pan", "Panda", "Parachute", "Paradise", "Parrot", "Passion", "Peace", "Peach", "Peanut", "Pear", "Pebble", "Penguin", "Pepper", "Perfume", "Picasso", "Pie", "Pig", "Pigeon", "Pikachu", "Pillow", "Pilot", "Pimento", "Pipe", "Pirate", "Pit", "Pizza", "Plane", "Plastic", "Playstation", "Plier", "Poison", "Poker", "Polar", "Pole", "Police", "Pony", "Pool", "Pope", "Porcelain", "Potato", "Potter", "Powder", "Pregnant", "President", "Primary", "Princess", "Prison", "Prom", "Psycho", "Pump", "Punk", "Puppet", "Purse", "Pyramid", "Radio", "Rail", "Rain", "Rake", "Ram", "Rambo", "Ramses", "Rap", "Rat", "Ray", "Reggae", "Register", "Revolution", "Ring", "Ripe", "River", "Robot", "Rock", "Rocky", "Room", "Rooster", "Root", "Rope", "Rose", "Ruler", "Rum", "Safari", "Safe", "Sahara", "Sail", "Salt", "Sand", "Sausage", "Scale", "Scene", "School", "Screw", "Series", "Sewer", "Shack", "Shakespeare", "Shark", "Sheep", "Shelf", "Shell", "Sherlock", "Ship", "Shovel", "Shower", "Shrek", "Shrimp", "Simpson", "Siren", "Ski", "Sleeve", "Slipper", "Smoke", "Snake", "Snow", "Soap", "Sock", "Socket", "Sofa", "Sombrero", "Song", "Spartacus", "Spear", "Spice", "Spielberg", "Spy", "Stallion", "Star", "Starbucks", "Stark", "Station", "Stew", "Sting", "Stone", "Straw", "Strawberry", "String", "Study", "Stuffing", "Subway", "Sugar", "Sun", "Switzerland", "Sword", "Syrup", "Tango", "Tarantino", "Tarzan", "Tattoo", "Taxi", "Temple", "Tennis", "Terminator", "Theater", "Thought", "Thread", "Throat", "Thunder", "Ticket", "Tie", "Tiger", "Titanic", "Tobacco", "Tokyo", "Tolkien", "Tomato", "Tool", "Tornado", "Towel", "Tower", "Tradition", "Train", "Treasure", "Triangle", "Troy", "Truce", "Tube", "Tulip", "Tuna", "Tunnel", "Umbrella", "Unicorn", "Uniform", "Vacation", "Vampire", "Vegas", "Vegetable", "Vengeance", "Venus", "Viking", "Violin", "Virus", "Volcano", "Waltz", "War", "Watch", "Wave", "Weather", "Western", "Wheat", "White", "Widowmaker", "Wind", "Window", "Wine", "Wolf", "Yellow", "Zeus", "Zombie", "Zoo"];
-    
+
     const greekWords=[
       "ελέφαντας","υπολογιστής","ευτυχία","θάλασσα","πεταλούδα","βουνό",
       "φιλία","ουράνιο τόξο","κιθάρα","πίτσα","ηφαίστειο","διαμάντι","δάσος",
@@ -541,14 +541,14 @@
     const wordInner = document.getElementById('wordInner');
     const clueInner = document.getElementById('clueInner');
     const clueField = document.getElementById('clueField');
-    
+
     let currentWord = '';
     let currentView = 'menu';
     let currentLang = 'en';
     let countdownId = null;
     let wordBlurred = false;
     let wordRevealed = false;
-    
+
     // Multiplayer state
     let clientUUID = '';
     let roomCode = '';
@@ -566,27 +566,27 @@
         currentLang = e.target.value;
       });
     });
-    
+
     // Calculate Levenshtein distance between two strings (case-insensitive)
     function levenshteinDistance(string_a, string_b) {
       const a = string_a.toLowerCase();
       const b = string_b.toLowerCase();
-      
+
       if (a.length === 0) return b.length;
       if (b.length === 0) return a.length;
-      
+
       const matrix = [];
-      
+
       // Initialize the first column
       for (let i = 0; i <= b.length; i++) {
         matrix[i] = [i];
       }
-      
+
       // Initialize the first row
       for (let j = 0; j <= a.length; j++) {
         matrix[0][j] = j;
       }
-      
+
       // Calculate distances
       for (let i = 1; i <= b.length; i++) {
         for (let j = 1; j <= a.length; j++) {
@@ -601,10 +601,10 @@
           }
         }
       }
-      
+
       return matrix[b.length][a.length];
     }
-    
+
     // Generate UUID for client identification
     function generateUUID() {
       return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -613,7 +613,7 @@
         return v.toString(16);
       });
     }
-    
+
     // Generate room code
     function generateRoomCode() {
       const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -623,10 +623,10 @@
       }
       return code;
     }
-    
+
     // Initialize client UUID on load
     clientUUID = generateUUID();
-    
+
     // Room management
     const roomBadge = document.getElementById('roomBadge');
     const roomModal = document.getElementById('roomModal');
@@ -635,16 +635,16 @@
     const wordsList = document.getElementById('wordsList');
     const currentWordDisplay = document.getElementById('currentWordDisplay');
     const endRoundBtn = document.getElementById('endRoundBtn');
-    
+
     // Initialize button visibility on load
     updateButtonVisibility();
-    
+
     // Show room modal on load
     setTimeout(() => {
       roomModal.classList.remove('hidden');
       roomCodeInput.focus();
     }, 100);
-    
+
     // Room badge click handler
     roomBadge.addEventListener('click', () => {
       if (roomCode) {
@@ -657,7 +657,7 @@
         });
       }
     });
-    
+
     // Join room button
     document.getElementById('joinRoomBtn').addEventListener('click', () => {
       const code = roomCodeInput.value.toUpperCase();
@@ -667,7 +667,7 @@
         alert('Please enter a valid 4-letter room code');
       }
     });
-    
+
     // Handle Enter key in room code input
     roomCodeInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
@@ -675,73 +675,95 @@
         document.getElementById('joinRoomBtn').click();
       }
     });
-    
+
     // New room button
     document.getElementById('newRoomBtn').addEventListener('click', () => {
       const code = generateRoomCode();
       roomCodeInput.value = code;
       connectToRoom(code);
     });
-    
+
     // Connect to room
     function connectToRoom(code) {
       roomCode = code;
       roomBadge.textContent = `Room: ${code}`;
       roomBadge.classList.remove('hidden');
       roomModal.classList.add('hidden');
-      
+
       // Connect to Gweet
       connectToGweet();
-      
+
       // Update button visibility after connecting
       updateButtonVisibility();
     }
-    
+
     // Gweet connection management
     async function connectToGweet() {
       // Disconnect existing connection
       if (gweetController) {
         gweetController.abort();
       }
-      
+
       const channelKey = `justone-stavros-${roomCode.toLowerCase()}`;
       gweetController = new AbortController();
-      
+
       try {
         // Fetch historical messages
         const historyResponse = await fetch(`https://gweet.stavros.io/stream/${channelKey}/?latest=10`);
         const historyData = await historyResponse.json();
-        
+
         // Process historical messages (filter by age)
         const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
         if (historyData.messages) {
-          historyData.messages.forEach(msg => {
-            if (new Date(msg.created) >= oneHourAgo) {
-              handleGweetMessage(msg.values);
+          // Filter messages by age first
+          const recentMessages = historyData.messages.filter(msg =>
+            new Date(msg.created) >= oneHourAgo
+          );
+
+          // Find the last endRound message
+          let lastEndRoundIndex = -1;
+          for (let i = recentMessages.length - 1; i >= 0; i--) {
+            const msg = recentMessages[i];
+            const type = msg.values?.type?.[0];
+            if (type === 'endRound') {
+              lastEndRoundIndex = i;
+              break;
             }
+          }
+
+          // Only process messages after the last endRound
+          // If there's no endRound, process all messages
+          // If the last message IS endRound, process nothing (start clean)
+          const messagesToProcess = lastEndRoundIndex === -1
+            ? recentMessages
+            : recentMessages.slice(lastEndRoundIndex + 1);
+
+          messagesToProcess.forEach(msg => {
+            handleGweetMessage(msg.values);
           });
+
           // Update button visibility after processing all historical messages
           updateButtonVisibility();
         }
-        
+
         // Establish streaming connection
         const streamResponse = await fetch(
           `https://gweet.stavros.io/stream/${channelKey}/?streaming=1`,
           { signal: gweetController.signal }
         );
-        
+
         const reader = streamResponse.body.getReader();
         const decoder = new TextDecoder();
         let buffer = '';
-        
+
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
-          
+
           buffer += decoder.decode(value, { stream: true });
           const lines = buffer.split('\n');
           buffer = lines.pop(); // Keep incomplete line in buffer
-          
+
           for (const line of lines) {
             if (line.trim()) {
               try {
@@ -767,11 +789,11 @@
         }
       }
     }
-    
+
     // Handle incoming Gweet messages
     function handleGweetMessage(data) {
       let type, word, lang, user;
-      
+
       // Parse message based on format
       if (typeof data === 'object' && data !== null) {
         type = data.type?.[0];
@@ -793,15 +815,15 @@
           user = params.get('user');
         }
       }
-      
+
       // Process based on message type
       if (type === 'newGame') {
         // Track timing of new game
         lastNewGameTime = Date.now();
-        
+
         // Track who has the word
         wordHolderUUID = user;
-        
+
         // Set current user's role
         if (user === clientUUID) {
           currentUserRole = 'wordHolder';
@@ -812,12 +834,12 @@
           // Update language selector
           document.querySelector(`[name="lang"][value="${currentLang}"]`).checked = true;
         }
-        
+
         // Reset submitted words
         submittedWords = [];
         hasSubmittedWord = false;
         updateSubmittedWordsDisplay();
-        
+
         // Update button visibility
         updateButtonVisibility();
       } else if (type === 'submitWord' && word) {
@@ -831,27 +853,27 @@
       } else if (type === 'endRound') {
         // Track timing of end round
         lastEndRoundTime = Date.now();
-        
+
         // Round ended by another player
         handleEndRound();
       }
     }
-    
+
     // Send message to Gweet
     async function sendGweetMessage(message) {
       if (!roomCode) return;
-      
+
       const channelKey = `justone-stavros-${roomCode.toLowerCase()}`;
       const params = new URLSearchParams();
-      
+
       // Add user UUID to all messages
       params.append('user', clientUUID);
-      
+
       // Add message fields
       for (const [key, value] of Object.entries(message)) {
         params.append(key, value);
       }
-      
+
       try {
         await fetch(`https://gweet.stavros.io/stream/${channelKey}/`, {
           method: 'POST',
@@ -864,27 +886,27 @@
         console.error('Error sending message:', error);
       }
     }
-    
+
     // Update submitted words display
     function updateSubmittedWordsDisplay() {
       if (!hasSubmittedWord) {
         submittedWordsDiv.classList.add('hidden');
         return;
       }
-      
+
       // Show the submitted words div
       submittedWordsDiv.classList.remove('hidden');
-      
+
       // Show the word display
       currentWordDisplay.classList.remove('hidden');
       currentWordDisplay.textContent = currentWord ? `Word: ${currentWord}` : '';
-      
+
       // Clear and rebuild the list
       wordsList.innerHTML = '';
-      
+
       // Get own submission for distance calculations
       const ownSubmission = submittedWords.find(s => s.user === clientUUID);
-      
+
       // Show own word first
       if (ownSubmission) {
         const li = document.createElement('li');
@@ -892,14 +914,14 @@
         li.className = 'own-word';
         wordsList.appendChild(li);
       }
-      
+
       // Show other words with distance-based coloring
       submittedWords
         .filter(s => s.user !== clientUUID)
         .forEach(submission => {
           const li = document.createElement('li');
           li.textContent = submission.word;
-          
+
           // Calculate distance and apply appropriate class
           if (ownSubmission) {
             const distance = levenshteinDistance(ownSubmission.word, submission.word);
@@ -908,23 +930,23 @@
             }
             // Distance > 4 gets default grey background from base .word-list li style
           }
-          
+
           wordsList.appendChild(li);
         });
     }
-    
+
     // Show Clue button handler
     document.getElementById('showClueBtn').addEventListener('click', () => {
       // Hide the modal
       submittedWordsDiv.classList.add('hidden');
-      
+
       // Show the clue in fullscreen
       show('clue');
       enterFullscreen();
       fitText(clueInner);
       setTimeout(() => fitText(clueInner), 100);
     });
-    
+
     // Handle ending the round (clears state and returns to menu)
     function handleEndRound() {
       // Clear word state
@@ -933,39 +955,43 @@
       hasSubmittedWord = false;
       wordRevealed = false;
       wordBlurred = false;
-      
+
       // Clear user roles
       wordHolderUUID = null;
       currentUserRole = null;
-      
+
+      // Clear timing state - important for proper game state detection
+      lastNewGameTime = null;
+      lastEndRoundTime = null;
+
       // Clear any countdown
-      if (countdownId) { 
-        clearInterval(countdownId); 
-        countdownId = null; 
+      if (countdownId) {
+        clearInterval(countdownId);
+        countdownId = null;
       }
-      
+
       // Reset visual states
       wordInner.classList.remove('blurred');
       document.getElementById('wordText').classList.remove('word-blurred');
       submittedWordsDiv.classList.add('hidden');
-      
-      // Update button visibility
-      updateButtonVisibility();
-      
-      // Return to main menu
+
+      // Return to main menu BEFORE updating button visibility
       show('menu');
+
+      // Update button visibility with correct view context
+      updateButtonVisibility();
     }
-    
+
     // End Round button handler
     endRoundBtn.addEventListener('click', () => {
       // Track the end round timing
       lastEndRoundTime = Date.now();
-      
+
       // Send endRound message to other players
       sendGweetMessage({
         type: 'endRound'
       });
-      
+
       // Handle the end round locally
       handleEndRound();
     });
@@ -973,13 +999,13 @@
     // View management
     function show(view) {
       [mainMenu, wordDisplay, clueInput, clueDisplay].forEach(v => v.classList.add('hidden'));
-      
+
       if (view === 'menu') {
         backBtn.classList.add('hidden');
       } else {
         backBtn.classList.remove('hidden');
       }
-      
+
       switch(view) {
         case 'menu': mainMenu.classList.remove('hidden'); break;
         case 'word': wordDisplay.classList.remove('hidden'); break;
@@ -987,10 +1013,10 @@
         case 'clue': clueDisplay.classList.remove('hidden'); break;
       }
       currentView = view;
-      
+
       // Update all button visibility based on current state
       updateButtonVisibility();
-      
+
       // Update browser history for back button handling
       if (view !== 'menu') {
         history.pushState({ view: view }, '', '#' + view);
@@ -1013,21 +1039,21 @@
       if (!lastNewGameTime) {
         return false;
       }
-      
+
       // If there's been an endRound after the last newGame, no game is in progress
       if (lastEndRoundTime && lastEndRoundTime > lastNewGameTime) {
         return false;
       }
-      
+
       // If there's been a newGame but no endRound after it, game is in progress
       return true;
     }
-    
+
     // Update button visibility based on user role and game state
     function updateButtonVisibility() {
       const btnWord = document.getElementById('btnWord');
       const btnClue = document.getElementById('btnClue');
-      
+
       if (!isGameInProgress()) {
         // No game in progress - anyone can start a new game
         btnWord.classList.remove('disabled');
@@ -1038,7 +1064,7 @@
         if (currentView === 'menu' || currentView === 'word' || currentView === 'clue') {
           endRoundBtn.classList.remove('hidden');
         }
-        
+
         // Check user role for main buttons
         if (currentUserRole === 'wordHolder') {
           // Word holder can click "Get Word" to see their word
@@ -1069,27 +1095,27 @@
         fitText(wordInner);
         return;
       }
-      
+
       // Check if a game is already in progress (and user is not word holder)
       if (isGameInProgress()) {
         // Button should be disabled for clue givers
         return;
       }
-      
+
       // Start a new game
       const pool = currentLang === 'en' ? englishWords : greekWords;
       currentWord = pool[Math.floor(Math.random() * pool.length)];
-      
+
       // Track this new game
       lastNewGameTime = Date.now();
       wordHolderUUID = clientUUID;
       currentUserRole = 'wordHolder';
-      
+
       // Reset submitted words for new game
       submittedWords = [];
       hasSubmittedWord = false;
       updateSubmittedWordsDisplay();
-      
+
       // Send new game message to other players
       sendGweetMessage({
         type: 'newGame',
@@ -1133,7 +1159,7 @@
           wordInner.classList.remove('blurred');
           wordText.classList.remove('word-blurred');
         }
-        
+
         // Haptic feedback
         if (navigator.vibrate) {
           navigator.vibrate(50); // Vibrate for 50ms
@@ -1147,7 +1173,7 @@
       if (!isGameInProgress() || currentUserRole !== 'clueGiver') {
         return;
       }
-      
+
       // If user has already submitted a word, show the submitted words modal
       if (hasSubmittedWord) {
         show('clueIn');
@@ -1174,19 +1200,19 @@
           (e.metaKey === true && [65, 67, 86, 88, 90].includes(e.keyCode))) {
         return;
       }
-      
+
       // For non-ASCII characters, let the input event handle the filtering
       if (e.keyCode > 127) {
         return;
       }
-      
+
       // Prevent if not a letter (for ASCII characters)
       const char = String.fromCharCode(e.keyCode);
       if (!/^[a-zA-Z]$/.test(char)) {
         e.preventDefault();
       }
     });
-    
+
     clueField.addEventListener('input', (e) => {
       // Remove any non-letter characters (supports all Unicode letters)
       e.target.value = e.target.value.replace(/[^\p{L}]/gu, '');
@@ -1198,29 +1224,29 @@
       const val = clueField.value.trim();
       if (!val) return;
       if (/\s/.test(val)) { alert('One word only!'); return; }
-      
+
       // Check if there's a word in the channel
       if (!currentWord) {
         alert('No word to give a clue for! Someone needs to start a new game first.');
         return;
       }
-      
+
       // Send the submitted word to other players
       sendGweetMessage({
         type: 'submitWord',
         word: val
       });
-      
+
       // Add to local submitted words
       submittedWords.push({ word: val, user: clientUUID });
       hasSubmittedWord = true;
-      
+
       // Store the clue but don't show it yet
       clueInner.textContent = val;
-      
+
       // Show the submitted words modal instead of going directly to clue display
       updateSubmittedWordsDisplay();
-      
+
       // Stay in clueIn view with the modal on top
       // The modal will be shown by updateSubmittedWordsDisplay
     });
@@ -1228,22 +1254,22 @@
     // Handle browser back button/gesture
     function goBackToMenu() {
       // No confirmation needed since we're preserving state
-      
-      if (countdownId) { 
-        clearInterval(countdownId); 
-        countdownId = null; 
+
+      if (countdownId) {
+        clearInterval(countdownId);
+        countdownId = null;
       }
-      
+
       // Reset blur state but keep the word (don't clear it)
       if (currentView === 'word') {
         wordBlurred = false;
         wordInner.classList.remove('blurred');
         document.getElementById('wordText').classList.remove('word-blurred');
       }
-      
+
       // Hide submitted words modal when returning to menu
       submittedWordsDiv.classList.add('hidden');
-      
+
       show('menu');
     }
 
@@ -1263,7 +1289,7 @@
       if (currentView === 'word') fitText(wordInner);
       if (currentView === 'clue') fitText(clueInner);
     });
-    
+
     window.addEventListener('orientationchange', () => {
       setTimeout(() => {
         if (currentView === 'word') fitText(wordInner);
@@ -1273,7 +1299,7 @@
 
     // Fullscreen functionality
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    
+
     if (!document.documentElement.requestFullscreen || isIOS) {
       fsBtn.style.display = 'none';
     } else {
