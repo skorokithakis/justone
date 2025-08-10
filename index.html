@@ -724,7 +724,7 @@
 
       try {
         // Fetch historical messages
-        const historyResponse = await fetch(`https://gweet.stavros.io/stream/${channelKey}/?latest=10`);
+        const historyResponse = await fetch(`https://gweet.stavros.io/stream/${channelKey}/?latest=50`);
         const historyData = await historyResponse.json();
 
         // Process historical messages (filter by age)
