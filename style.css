@@ -369,28 +369,41 @@ button.disabled {
 }
 
 .word-list li.own-word {
-  background: #ffb3ba;
+  background: #d0e8ee;
+  font-weight: bold;
+  position: relative;
+}
+
+.word-list li.own-word::after {
+  content: "YOUR CLUE";
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: #bddbe3;
+  font-size: 0.7rem;
+  padding: 2px 6px;
+  border-radius: 4px;
   font-weight: bold;
 }
 
+/* Distance-based coloring - Ultra pastel traffic light system */
 .word-list li.distance-0 {
-  background: #ffb3ba;
+  background: #fce4e4;
+  color: #8b1a1a;
+  font-weight: bold;
+  position: relative;
 }
 
 .word-list li.distance-1 {
-  background: #ffc4c4;
+  background: #ffe8cc;
+  color: #b8450a;
+  font-weight: bold;
 }
 
 .word-list li.distance-2 {
-  background: #ffd5d5;
-}
-
-.word-list li.distance-3 {
-  background: #ffe6e6;
-}
-
-.word-list li.distance-4 {
-  background: #fff0f0;
+  background: #fff4cc;
+  color: #b18500;
+  font-weight: bold;
 }
 
 #currentWordDisplay {
@@ -413,4 +426,6 @@ button.disabled {
   margin-top: 1rem;
   font-size: 1.2rem;
   padding: 0.8rem;
+  position: sticky;
+  bottom: 0;
 }
