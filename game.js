@@ -5,6 +5,7 @@ const GameState = {
     word: '',           // Current word being guessed
     language: 'en',     // Selected language
     wordDisplay: 'hidden', // 'hidden', 'countdown', 'visible', 'blurred'
+    wordIndex: 0,       // Current index in the shuffled word list
     countdownTimer: null,  // Timer ID for countdown
     holdTimer: null,       // Timer for 500ms hold duration
     holdProgress: 0,       // Progress value (0-100) for animation
@@ -59,6 +60,7 @@ const GameState = {
     // Reset game state
     this.game.word = '';
     this.game.wordDisplay = 'hidden';
+    // Don't reset wordIndex - it persists for the room session.
     if (this.game.countdownTimer) {
       clearInterval(this.game.countdownTimer);
       this.game.countdownTimer = null;
