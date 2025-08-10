@@ -477,6 +477,7 @@
           <button id="joinRoomBtn">Join Room</button>
           <button id="newRoomBtn">New Room</button>
         </div>
+        <button id="offlineBtn" style="margin-top: 2rem; width: 100%; font-size: 1.3rem;">Play Offline</button>
       </div>
     </div>
 
@@ -559,6 +560,7 @@
     let lastEndRoundTime = null;
     let wordHolderUUID = null; // Track who has the word
     let currentUserRole = null; // 'wordHolder' or 'clueGiver' or null
+    let isOfflineMode = false; // Track offline mode
 
     // Language picker
     document.querySelectorAll('[name="lang"]').forEach(radio => {
@@ -683,6 +685,16 @@
       connectToRoom(code);
     });
 
+    // Offline mode button
+    document.getElementById('offlineBtn').addEventListener('click', () => {
+      isOfflineMode = true;
+      roomModal.classList.add('hidden');
+      // Don't show the room badge in offline mode
+      roomBadge.classList.add('hidden');
+      // Update button visibility for offline mode
+      updateButtonVisibility();
+    });
+
     // Connect to room
     function connectToRoom(code) {
       roomCode = code;
@@ -699,6 +711,9 @@
 
     // Gweet connection management
     async function connectToGweet() {
+      // Skip in offline mode
+      if (isOfflineMode) return;
+
       // Disconnect existing connection
       if (gweetController) {
         gweetController.abort();
@@ -861,7 +876,7 @@
 
     // Send message to Gweet
     async function sendGweetMessage(message) {
-      if (!roomCode) return;
+      if (!roomCode || isOfflineMode) return;
 
       const channelKey = `justone-stavros-${roomCode.toLowerCase()}`;
       const params = new URLSearchParams();
@@ -1059,7 +1074,13 @@
       const btnWord = document.getElementById('btnWord');
       const btnClue = document.getElementById('btnClue');
 
-      if (!isGameInProgress()) {
+      if (isOfflineMode) {
+        // Offline mode - both buttons always enabled
+        btnWord.classList.remove('disabled');
+        btnClue.classList.remove('disabled');
+        // Hide End Round button in offline mode
+        endRoundBtn.classList.add('hidden');
+      } else if (!isGameInProgress()) {
         // No game in progress - anyone can start a new game
         btnWord.classList.remove('disabled');
         btnClue.classList.add('disabled');
@@ -1090,6 +1111,36 @@
 
     // Get Word button
     document.getElementById('btnWord').onclick = () => {
+      // In offline mode, always allow getting a new word
+      if (isOfflineMode) {
+        const pool = currentLang === 'en' ? englishWords : greekWords;
+        currentWord = pool[Math.floor(Math.random() * pool.length)];
+
+        show('word');
+        enterFullscreen();
+
+        let seconds = 2;
+        wordInner.textContent = seconds;
+        fitText(wordInner);
+        wordRevealed = false;
+        wordBlurred = false;
+
+        if (countdownId) clearInterval(countdownId);
+        countdownId = setInterval(() => {
+          seconds--;
+          if (seconds <= 0) {
+            clearInterval(countdownId);
+            countdownId = null;
+            wordInner.textContent = currentWord;
+            wordRevealed = true;
+          } else {
+            wordInner.textContent = seconds;
+          }
+          fitText(wordInner);
+        }, 1000);
+        return;
+      }
+
       // Check if user is the word holder returning to their word
       if (isGameInProgress() && currentUserRole === 'wordHolder') {
         // Return to the existing word
@@ -1174,6 +1225,19 @@
 
     // Type Clue button
     document.getElementById('btnClue').onclick = () => {
+      // In offline mode, always allow typing a clue
+      if (isOfflineMode) {
+        clueField.value = '';
+        show('clueIn');
+        // Focus the input field after the view is shown
+        requestAnimationFrame(() => {
+          clueField.focus();
+          // For mobile devices, also scroll into view
+          clueField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+        return;
+      }
+
       // Check if not in a game or not a clue giver
       if (!isGameInProgress() || currentUserRole !== 'clueGiver') {
         return;
@@ -1229,6 +1293,16 @@
       const val = clueField.value.trim();
       if (!val) return;
       if (/\s/.test(val)) { alert('One word only!'); return; }
+
+      // In offline mode, go straight to showing the clue
+      if (isOfflineMode) {
+        clueInner.textContent = val;
+        show('clue');
+        enterFullscreen();
+        fitText(clueInner);
+        setTimeout(() => fitText(clueInner), 100);
+        return;
+      }
 
       // Check if there's a word in the channel
       if (!currentWord) {
