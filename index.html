@@ -142,7 +142,6 @@
     let gweetController = null;
     let submittedWords = [];
     let hasSubmittedWord = false;
-    let wordHolderUUID = null; // Track who has the word
     let currentUserRole = null; // 'wordHolder' or 'clueGiver' or null
     let netState = "ENDED"; // Network state: "OFFLINE", "IN_PROGRESS", "ENDED"
 
@@ -289,8 +288,6 @@
       // Connect to Gweet
       connectToGweet();
 
-      // Update button visibility after connecting
-      updateButtonVisibility();
     }
 
     // Gweet connection management
@@ -311,38 +308,29 @@
         const historyResponse = await fetch(`https://gweet.stavros.io/stream/${channelKey}/?latest=50`);
         const historyData = await historyResponse.json();
 
-        // Process historical messages (filter by age)
+        // Process historical messages in single pass
         const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
         if (historyData.messages) {
-          // Filter messages by age first
-          const recentMessages = historyData.messages.filter(msg =>
-            new Date(msg.created) >= tenMinutesAgo
-          );
-
-          // Find the last endRound message
-          let lastEndRoundIndex = -1;
-          for (let i = recentMessages.length - 1; i >= 0; i--) {
-            const msg = recentMessages[i];
-            const type = msg.values?.type?.[0];
-            if (type === 'endRound') {
-              lastEndRoundIndex = i;
+          // Find last endRound index in recent messages
+          let lastEndRoundIdx = -1;
+          for (let i = historyData.messages.length - 1; i >= 0; i--) {
+            const msg = historyData.messages[i];
+            // Stop looking if message is too old
+            if (new Date(msg.created) < tenMinutesAgo) break;
+            // Found the last endRound
+            if (msg.values?.type?.[0] === 'endRound') {
+              lastEndRoundIdx = i;
               break;
             }
           }
-
-          // Only process messages after the last endRound
-          // If there's no endRound, process all messages
-          // If the last message IS endRound, process nothing (start clean)
-          const messagesToProcess = lastEndRoundIndex === -1
-            ? recentMessages
-            : recentMessages.slice(lastEndRoundIndex + 1);
-
-          messagesToProcess.forEach(msg => {
+          
+          // Process messages after last endRound (or all if no endRound found)
+          for (let i = lastEndRoundIdx + 1; i < historyData.messages.length; i++) {
+            const msg = historyData.messages[i];
+            // Skip messages older than 10 minutes
+            if (new Date(msg.created) < tenMinutesAgo) continue;
             handleGweetMessage(msg.values);
-          });
-
-          // Update button visibility after processing all historical messages
-          updateButtonVisibility();
+          }
         }
 
         // Establish streaming connection
@@ -417,9 +405,6 @@
 
       // Process based on message type
       if (type === 'newGame') {
-        // Track who has the word
-        wordHolderUUID = user;
-
         // Set network state to IN_PROGRESS
         netState = "IN_PROGRESS";
 
@@ -450,9 +435,6 @@
           updateSubmittedWordsDisplay();
         }
       } else if (type === 'endRound') {
-        // Set network state to ENDED
-        netState = "ENDED";
-
         // Round ended by another player
         handleEndRound();
       }
@@ -548,6 +530,11 @@
 
     // Handle ending the round (clears state and returns to menu)
     function handleEndRound() {
+      // Set network state to ENDED (if not offline)
+      if (netState !== "OFFLINE") {
+        netState = "ENDED";
+      }
+
       // Clear word state
       currentWord = '';
       submittedWords = [];
@@ -556,13 +543,7 @@
       wordBlurred = false;
 
       // Clear user roles
-      wordHolderUUID = null;
       currentUserRole = null;
-
-      // Set network state to ENDED (if not offline)
-      if (netState !== "OFFLINE") {
-        netState = "ENDED";
-      }
 
       // Clear any countdown
       if (countdownId) {
@@ -575,11 +556,8 @@
       document.getElementById('wordText').classList.remove('word-blurred');
       submittedWordsDiv.classList.add('hidden');
 
-      // Return to main menu BEFORE updating button visibility
+      // Return to main menu (show() will call updateButtonVisibility)
       show('menu');
-
-      // Update button visibility with correct view context
-      updateButtonVisibility();
     }
 
     // End Round button handler
@@ -588,9 +566,6 @@
       if (!confirm('Are you sure you want to end the round for everyone?')) {
         return;
       }
-
-      // Set network state to ENDED
-      netState = "ENDED";
 
       // Send endRound message to other players
       sendGweetMessage({
@@ -644,39 +619,22 @@
       const btnWord = document.getElementById('btnWord');
       const btnClue = document.getElementById('btnClue');
 
-      if (netState === "OFFLINE") {
-        // Offline mode - both buttons always enabled
-        btnWord.classList.remove('disabled');
-        btnClue.classList.remove('disabled');
-        // Hide End Round button in offline mode
-        endRoundBtn.classList.add('hidden');
-      } else if (netState === "ENDED") {
-        // No game in progress - anyone can start a new game
-        btnWord.classList.remove('disabled');
-        btnClue.classList.add('disabled');
-        endRoundBtn.classList.add('hidden');
-      } else if (netState === "IN_PROGRESS") {
-        // Game in progress - show End Round button
-        if (currentView === 'menu' || currentView === 'word' || currentView === 'clue') {
-          endRoundBtn.classList.remove('hidden');
-        }
+      // Simplified button state logic
+      const isOffline = netState === "OFFLINE";
+      const isInProgress = netState === "IN_PROGRESS";
+      const isWordHolder = currentUserRole === 'wordHolder';
+      const isClueGiver = currentUserRole === 'clueGiver';
 
-        // Check user role for main buttons
-        if (currentUserRole === 'wordHolder') {
-          // Word holder can click "Get Word" to see their word
-          btnWord.classList.remove('disabled');
-          btnClue.classList.add('disabled');
-        } else if (currentUserRole === 'clueGiver') {
-          // Clue giver can click "Type Clue" or see submitted words
-          btnWord.classList.add('disabled');
-          btnClue.classList.remove('disabled');
-        } else {
-          // Edge case: game in progress but no role assigned yet
-          // This can happen briefly during message processing
-          btnWord.classList.add('disabled');
-          btnClue.classList.add('disabled');
-        }
-      }
+      // Set button states
+      btnWord.classList.toggle('disabled', 
+        !isOffline && isInProgress && !isWordHolder);
+      btnClue.classList.toggle('disabled', 
+        !isOffline && (netState === "ENDED" || (isInProgress && !isClueGiver)));
+
+      // End Round button visibility
+      const showEndRound = isInProgress && !isOffline && 
+        (currentView === 'menu' || currentView === 'word' || currentView === 'clue');
+      endRoundBtn.classList.toggle('hidden', !showEndRound);
     }
 
     // Get Word button
@@ -733,7 +691,6 @@
       currentWord = pool[Math.floor(Math.random() * pool.length)];
 
       // Set game state
-      wordHolderUUID = clientUUID;
       currentUserRole = 'wordHolder';
       netState = "IN_PROGRESS";
 
