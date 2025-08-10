@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+Mono+TC&display=swap" rel="stylesheet">
-  <title>Just One Helper</title>
+  <title>Just One</title>
 </head>
 
 <body>
@@ -142,8 +142,6 @@
     let gweetController = null;
     let submittedWords = [];
     let hasSubmittedWord = false;
-    let lastNewGameTime = null;
-    let lastEndRoundTime = null;
     let wordHolderUUID = null; // Track who has the word
     let currentUserRole = null; // 'wordHolder' or 'clueGiver' or null
     let netState = "ENDED"; // Network state: "OFFLINE", "IN_PROGRESS", "ENDED"
@@ -419,9 +417,6 @@
 
       // Process based on message type
       if (type === 'newGame') {
-        // Track timing of new game
-        lastNewGameTime = Date.now();
-
         // Track who has the word
         wordHolderUUID = user;
 
@@ -455,9 +450,6 @@
           updateSubmittedWordsDisplay();
         }
       } else if (type === 'endRound') {
-        // Track timing of end round
-        lastEndRoundTime = Date.now();
-
         // Set network state to ENDED
         netState = "ENDED";
 
@@ -572,10 +564,6 @@
         netState = "ENDED";
       }
 
-      // Clear timing state - important for proper game state detection
-      lastNewGameTime = null;
-      lastEndRoundTime = null;
-
       // Clear any countdown
       if (countdownId) {
         clearInterval(countdownId);
@@ -600,9 +588,6 @@
       if (!confirm('Are you sure you want to end the round for everyone?')) {
         return;
       }
-
-      // Track the end round timing
-      lastEndRoundTime = Date.now();
 
       // Set network state to ENDED
       netState = "ENDED";
@@ -747,8 +732,7 @@
       const pool = currentLang === 'en' ? englishWords : greekWords;
       currentWord = pool[Math.floor(Math.random() * pool.length)];
 
-      // Track this new game
-      lastNewGameTime = Date.now();
+      // Set game state
       wordHolderUUID = clientUUID;
       currentUserRole = 'wordHolder';
       netState = "IN_PROGRESS";
