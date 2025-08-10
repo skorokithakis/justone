@@ -18,12 +18,13 @@ const GameState = {
     status: 'ENDED',    // 'OFFLINE', 'IN_PROGRESS', 'ENDED'
     roomCode: '',
     clientId: '',
+    username: '',       // User's display name
     userRole: null,     // 'wordHolder', 'clueGiver', or null
     controller: null,   // WebSocket controller
   },
 
   // Submissions state
-  submissions: [],      // Array of {word: string, user: string}
+  submissions: [],      // Array of {word: string, user: string, username: string}
 
   // Helper methods
   isOffline() {
