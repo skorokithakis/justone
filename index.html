@@ -16,6 +16,16 @@
   <link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+Mono+TC&display=swap" rel="stylesheet">
   <title>Just One</title>
   <script src="./game.js"></script>
+  <script>
+    // Register service worker to clear old caches.
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(registration => console.log('Service Worker registered for cache cleanup'))
+          .catch(err => console.log('Service Worker registration failed:', err));
+      });
+    }
+  </script>
 </head>
 
 <body>
@@ -787,27 +797,27 @@
         playerListContainer.style.display = 'none';
       } else {
         playerListContainer.style.display = 'block';
-        
+
         if (count === 0) {
           playerCountDiv.textContent = 'Waiting for players...';
           playerListItems.innerHTML = '';
         } else {
           playerCountDiv.textContent = `Players in lobby (${count})`;
-          
+
           // Clear and rebuild the player list
           playerListItems.innerHTML = '';
-          
+
           // Add each player as a list item
           activePlayers.forEach((username, userId) => {
             const li = document.createElement('li');
             li.textContent = username;
-            
+
             // Mark the current user
             if (userId === state.network.clientId) {
               li.classList.add('current-player');
               li.textContent += ' (You)';
             }
-            
+
             playerListItems.appendChild(li);
           });
         }

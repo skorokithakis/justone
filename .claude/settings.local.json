@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(jj diff:*)",
-      "Bash(jj describe:*)"
+      "Bash(jj describe:*)",
+      "Bash(pre-commit run:*)"
     ],
     "deny": [],
     "ask": []
