@@ -25,6 +25,7 @@
         <label><input type="radio" name="lang" value="en" checked> English</label>
         <label><input type="radio" name="lang" value="gr"> Greek</label>
       </div>
+      <div id="playerCount" style="margin: 1rem 0; font-size: 1.2rem; color: #666;"></div>
       <button id="btnWord">Get Word</button>
       <button id="btnClue">Type Clue</button>
     </div>
@@ -248,6 +249,9 @@
     const wordsList = document.getElementById('wordsList');
     const currentWordDisplay = document.getElementById('currentWordDisplay');
     const endRoundBtn = document.getElementById('endRoundBtn');
+    
+    // Track unique players who have joined (store as Map of id -> username)
+    const activePlayers = new Map();
 
     // Initialize button visibility on load
     updateButtonVisibility();
@@ -335,6 +339,9 @@
       roomModal.classList.add('hidden');
       // Don't show the room badge in offline mode
       roomBadge.classList.add('hidden');
+      // Clear player list in offline mode
+      activePlayers.clear();
+      updatePlayerCount();
       // Update button visibility for offline mode
       updateButtonVisibility();
     });
@@ -348,7 +355,14 @@
 
       // Connect to Gweet
       connectToGweet();
-
+      
+      // Send playerJoined message after connection is established
+      setTimeout(() => {
+        sendGweetMessage({
+          type: 'playerJoined',
+          username: state.network.username
+        });
+      }, 500);
     }
 
     // Gweet connection management
@@ -390,7 +404,38 @@
           // Apply the maximum word index found
           state.game.wordIndex = maxWordIndex;
 
-          // Second pass: Find last endRound and process messages after it for game state
+          // Second pass: Find last endGame/endRound and collect playerJoined messages after it
+          let lastEndIdx = -1;
+          activePlayers.clear();
+          
+          for (let i = historyData.messages.length - 1; i >= 0; i--) {
+            const msg = historyData.messages[i];
+            // Stop looking if message is too old
+            if (new Date(msg.created) < tenMinutesAgo) break;
+            // Found the last endGame or endRound
+            if (msg.values?.type?.[0] === 'endGame' || msg.values?.type?.[0] === 'endRound') {
+              lastEndIdx = i;
+              break;
+            }
+          }
+          
+          // Count playerJoined messages after last end
+          for (let i = lastEndIdx + 1; i < historyData.messages.length; i++) {
+            const msg = historyData.messages[i];
+            // Skip messages older than 10 minutes
+            if (new Date(msg.created) < tenMinutesAgo) continue;
+            
+            // Track playerJoined messages
+            if (msg.values?.type?.[0] === 'playerJoined' && msg.values?.user?.[0]) {
+              const username = msg.values?.username?.[0] || 'Anonymous';
+              activePlayers.set(msg.values.user[0], username);
+            }
+          }
+          
+          // Update player count display
+          updatePlayerCount();
+
+          // Third pass: Process messages after last endRound for game state
           let lastEndRoundIdx = -1;
           for (let i = historyData.messages.length - 1; i >= 0; i--) {
             const msg = historyData.messages[i];
@@ -526,6 +571,15 @@
       } else if (type === 'endRound') {
         // Round ended by another player
         handleEndRound();
+      } else if (type === 'playerJoined' && user) {
+        // Player joined the room
+        const playerName = username || 'Anonymous';
+        activePlayers.set(user, playerName);
+        updatePlayerCount();
+      } else if (type === 'endGame') {
+        // Game ended, clear player list
+        activePlayers.clear();
+        updatePlayerCount();
       }
     }
 
@@ -631,6 +685,22 @@
       setTimeout(() => fitText(clueInner), 100);
     });
 
+    // Update player count display
+    function updatePlayerCount() {
+      const playerCountDiv = document.getElementById('playerCount');
+      const count = activePlayers.size;
+      
+      if (state.network.status === "OFFLINE") {
+        playerCountDiv.textContent = '';
+      } else if (count === 0) {
+        playerCountDiv.textContent = 'Waiting for players...';
+      } else {
+        // Get the player names from the Map values and join them
+        const playerNames = Array.from(activePlayers.values()).join(', ');
+        playerCountDiv.textContent = `Players: ${playerNames}`;
+      }
+    }
+    
     // Handle ending the round (clears state and returns to menu)
     function handleEndRound() {
       // Use the GameState reset method
