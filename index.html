@@ -25,7 +25,10 @@
         <label><input type="radio" name="lang" value="en" checked> English</label>
         <label><input type="radio" name="lang" value="gr"> Greek</label>
       </div>
-      <div id="playerCount" style="margin: 1rem 0; font-size: 1.2rem; color: #666;"></div>
+      <div id="playerList" class="player-list-container">
+        <div id="playerCount" class="player-count"></div>
+        <ul id="playerListItems" class="player-list"></ul>
+      </div>
       <button id="btnWord">Get Word</button>
       <button id="btnClue">Type Clue</button>
     </div>
@@ -776,16 +779,38 @@
     // Update player count display
     function updatePlayerCount() {
       const playerCountDiv = document.getElementById('playerCount');
+      const playerListItems = document.getElementById('playerListItems');
+      const playerListContainer = document.getElementById('playerList');
       const count = activePlayers.size;
 
       if (state.network.status === "OFFLINE") {
-        playerCountDiv.textContent = '';
-      } else if (count === 0) {
-        playerCountDiv.textContent = 'Waiting for players...';
+        playerListContainer.style.display = 'none';
       } else {
-        // Get the player names from the Map values and join them
-        const playerNames = Array.from(activePlayers.values()).join(', ');
-        playerCountDiv.textContent = `Players: ${playerNames}`;
+        playerListContainer.style.display = 'block';
+        
+        if (count === 0) {
+          playerCountDiv.textContent = 'Waiting for players...';
+          playerListItems.innerHTML = '';
+        } else {
+          playerCountDiv.textContent = `Players in lobby (${count})`;
+          
+          // Clear and rebuild the player list
+          playerListItems.innerHTML = '';
+          
+          // Add each player as a list item
+          activePlayers.forEach((username, userId) => {
+            const li = document.createElement('li');
+            li.textContent = username;
+            
+            // Mark the current user
+            if (userId === state.network.clientId) {
+              li.classList.add('current-player');
+              li.textContent += ' (You)';
+            }
+            
+            playerListItems.appendChild(li);
+          });
+        }
       }
     }
 

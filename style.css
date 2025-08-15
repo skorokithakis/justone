@@ -446,6 +446,52 @@ button.disabled {
   padding: 0.5rem 1.5rem;
 }
 
+/* Player List Display */
+.player-list-container {
+  margin: 1rem 0;
+}
+
+.player-count {
+  font-size: 1.1rem;
+  color: #2c3e50;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.player-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-width: 350px;
+  margin: 0 auto;
+}
+
+.player-list li {
+  padding: 0.6rem 1rem;
+  margin-bottom: 0.4rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  font-size: 1rem;
+  text-align: center;
+  transition: background 0.3s ease;
+  color: #495057;
+  border: 1px solid #e9ecef;
+}
+
+.player-list li.current-player {
+  background: #e8f4f8;
+  font-weight: bold;
+  color: #2c3e50;
+  border-color: #c3e6f0;
+  position: relative;
+}
+
+.player-list li.current-player::before {
+  content: "👤";
+  position: absolute;
+  left: 0.8rem;
+}
+
 /* Submitted Words Display */
 #submittedWords {
   position: absolute;
