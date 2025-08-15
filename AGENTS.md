@@ -1,3 +1,4 @@
 - Always run `pre-commit run -a` after every edit.
 - Always run `jj describe -m` after every change, to describe the changes that have taken place in THE WHOLE SESSION so far. Don't run `jj diff`, just describe what you've done so far.
 - Never try to run a server and test things, tell the human to test.
+- Whenever you are surprised by a piece of code, or when you realize it does something other than you thought, add a comment to clarify what it actually does, to avoid that surprise in the future.

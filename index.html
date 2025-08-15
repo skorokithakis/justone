@@ -173,6 +173,216 @@
     // Use unified GameState from game.js
     const state = window.GameState;
 
+    // Reconnection state for exponential backoff
+    let reconnectAttempt = 0;
+    let reconnectTimeout = null;
+
+    // Message log for state synchronization
+    const messageLog = [];
+
+    // Streaming message queue for race condition prevention
+    let processStreamingMessages = false;
+    let streamingMessageQueue = [];
+
+    // Generate unique message ID
+    function generateMessageId() {
+      return 'msg-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+    }
+
+    // Filter messages based on rules:
+    // - Messages within last 10 minutes
+    // - Messages after last endRound message
+    // - Exclude wordIndex messages
+    function getFilteredMessages() {
+      const tenMinutesAgo = Date.now() - (10 * 60 * 1000);
+
+      // Find the index of the last endRound message
+      let lastEndIndex = -1;
+      for (let i = messageLog.length - 1; i >= 0; i--) {
+        const msg = messageLog[i];
+        if (msg.type === 'endRound') {
+          lastEndIndex = i;
+          break;
+        }
+      }
+
+      // Filter messages based on rules
+      const filtered = [];
+      for (let i = lastEndIndex + 1; i < messageLog.length; i++) {
+        const msg = messageLog[i];
+
+        // Skip messages older than 10 minutes
+        if (msg.timestamp < tenMinutesAgo) continue;
+
+        // Skip wordIndex-only messages (newGame messages are included but wordIndex field ignored)
+        // We keep the messages but will ignore the wordIndex field during replay
+
+        filtered.push(msg);
+      }
+
+      return filtered;
+    }
+
+    // Replay messages to rebuild state
+    function replayMessagesForState() {
+      // Reset relevant state (but keep network info)
+      state.game.word = '';
+      state.network.userRole = null;
+      state.submissions = [];
+
+      // Clear active players
+      activePlayers.clear();
+
+      // Get filtered messages to replay
+      const messages = getFilteredMessages();
+
+      // Log the message queue being processed
+      console.log('Processing message queue:', messages.map(m => ({
+        type: m.type,
+        sender: m.sender,
+        data: m.data,
+        timestamp: new Date(m.timestamp).toLocaleTimeString()
+      })));
+
+      // Default to ENDED status if not offline (ready to start a new game).
+      // This will be overridden if we replay a newGame message.
+      if (state.network.status !== 'OFFLINE') {
+        state.network.status = 'ENDED';
+      }
+
+      // Track if we're in a game
+      let inGame = false;
+      let gameWord = '';
+      let gameLang = 'en';
+      let wordHolder = null;
+
+      // Process each message
+      for (const msg of messages) {
+        const isOwnMessage = msg.sender === state.network.clientId;
+
+        switch (msg.type) {
+          case 'newGame':
+            inGame = true;
+            gameWord = msg.data.word;
+            gameLang = msg.data.lang || 'en';
+            wordHolder = msg.sender;
+
+            // Set state based on whether we're the word holder
+            if (isOwnMessage) {
+              state.network.userRole = 'wordHolder';
+            } else {
+              state.network.userRole = 'clueGiver';
+            }
+
+            state.game.word = gameWord;
+            state.game.language = gameLang;
+            state.network.status = 'IN_PROGRESS';
+
+            // Clear submissions for new game
+            state.submissions = [];
+            break;
+
+          case 'submitWord':
+            if (inGame && msg.data.word) {
+              const submission = {
+                word: msg.data.word,
+                user: msg.sender,
+                username: msg.data.username || 'Anonymous'
+              };
+
+              // Check if not already added
+              if (!state.submissions.some(s => s.word === submission.word && s.user === submission.user)) {
+                state.submissions.push(submission);
+              }
+            }
+            break;
+
+          case 'playerJoined':
+            // Track active player
+            const username = msg.data.username || 'Anonymous';
+            activePlayers.set(msg.sender, username);
+            break;
+
+          case 'endRound':
+            // Reset game state and clear player list
+            inGame = false;
+            state.game.word = '';
+            state.network.userRole = null;
+            state.network.status = 'ENDED';
+            state.submissions = [];
+            activePlayers.clear();
+
+            // Clear word display and return everyone to lobby
+            wordInner.textContent = '';
+            state.game.wordDisplay = 'hidden';
+            show('menu');
+            break;
+        }
+      }
+
+      // Update displays based on replayed state
+      updatePlayerCount();
+      updateSubmittedWordsDisplay();
+      updateButtonVisibility();
+
+      // Check if we need to announce ourselves after replay
+      // This handles the case where endRound cleared the player list
+      if (state.network.roomCode && state.network.status !== "OFFLINE") {
+        const hasOurPlayerJoined = messages.some(msg =>
+          msg.type === 'playerJoined' && msg.sender === state.network.clientId
+        );
+
+        if (!hasOurPlayerJoined) {
+          // We're not in the player list, announce ourselves.
+          // This will only be sent once: sendGweetMessage adds the message to the log,
+          // so the next replay will find our playerJoined message and won't send it again.
+          sendGweetMessage({
+            type: 'playerJoined'
+          });
+        }
+      }
+    }
+
+    // Centralized state update function
+    function updateGameState() {
+      // Replay all messages to rebuild state
+      replayMessagesForState();
+
+      // If game is ended and player isn't in menu, force them back
+      if (state.network.status === 'ENDED' && state.view.current !== 'menu') {
+        // Clear any active UI states
+        if (state.game.countdownTimer) {
+          clearInterval(state.game.countdownTimer);
+          state.game.countdownTimer = null;
+        }
+
+        // Hide modals
+        submittedWordsDiv.classList.add('hidden');
+
+        // Force back to menu
+        show('menu');
+      }
+    }
+
+    // Add message to log (without triggering state replay)
+    function addMessageToLog(messageId, type, data, sender, timestamp = Date.now()) {
+      // Check if message already exists (deduplication)
+      if (messageLog.some(m => m.id === messageId)) {
+        return false; // Message already exists
+      }
+
+      // Add to log
+      messageLog.push({
+        id: messageId,
+        type: type,
+        data: data || {},
+        sender: sender,
+        timestamp: timestamp
+      });
+
+      return true; // Message was added
+    }
+
     // Language picker
     document.querySelectorAll('[name="lang"]').forEach(radio => {
       radio.addEventListener('change', e => {
@@ -269,18 +479,38 @@
 
     // Show room modal on load
     setTimeout(() => {
+      // Parse URL parameters
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlRoomCode = urlParams.get('room');
+
       // Load saved name from localStorage
       const savedName = localStorage.getItem('justone-username');
       if (savedName) {
         nameInput.value = savedName;
       }
 
-      roomModal.classList.remove('hidden');
-      // Focus on name input if empty, otherwise on room code
-      if (!nameInput.value) {
-        nameInput.focus();
+      // Check if we have a valid room code in URL and a saved username
+      if (urlRoomCode && /^[A-Za-z]{4}$/i.test(urlRoomCode) && savedName) {
+        // Auto-join the room
+        state.network.username = savedName;
+        connectToRoom(urlRoomCode.toUpperCase());
       } else {
-        roomCodeInput.focus();
+        // Show the room modal
+        if (urlRoomCode && /^[A-Za-z]{4}$/i.test(urlRoomCode)) {
+          // Pre-fill the room code from URL
+          roomCodeInput.value = urlRoomCode.toUpperCase();
+        }
+
+        roomModal.classList.remove('hidden');
+        // Focus on name input if empty, otherwise on room code
+        if (!nameInput.value) {
+          nameInput.focus();
+        } else if (!roomCodeInput.value) {
+          roomCodeInput.focus();
+        } else {
+          // Both filled, focus on join button or name field
+          nameInput.focus();
+        }
       }
     }, 100);
 
@@ -355,6 +585,13 @@
       updatePlayerCount();
       // Update button visibility for offline mode
       updateButtonVisibility();
+
+      // Clear any pending reconnection when going offline
+      if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout);
+        reconnectTimeout = null;
+      }
+      reconnectAttempt = 0;
     });
 
     // Connect to room
@@ -364,15 +601,56 @@
       roomBadge.classList.remove('hidden');
       roomModal.classList.add('hidden');
 
-      // Connect to Gweet
+      // Connect to Gweet (will handle playerJoined automatically)
       connectToGweet();
+    }
 
-      // Send playerJoined message after connection is established
-      setTimeout(() => {
-        sendGweetMessage({
-          type: 'playerJoined'
-        });
-      }, 500);
+    // Helper function to schedule reconnection with exponential backoff
+    function scheduleReconnect(errorMessage = null) {
+      // Calculate backoff delay: 0ms (immediate), 1s, 2s, 5s, 5s, ...
+      let retryDelay;
+      if (reconnectAttempt === 0) {
+        retryDelay = 0; // Immediate retry
+      } else if (reconnectAttempt === 1) {
+        retryDelay = 1000; // 1 second
+      } else if (reconnectAttempt === 2) {
+        retryDelay = 2000; // 2 seconds
+      } else {
+        retryDelay = 5000; // 5 seconds (max)
+      }
+
+      reconnectAttempt++;
+
+      // Log reconnection details
+      if (retryDelay === 0) {
+        console.log('[Gweet] Retrying connection immediately...');
+      } else {
+        console.log(`[Gweet] Will retry connection in ${retryDelay / 1000} second${retryDelay > 1000 ? 's' : ''}...`);
+      }
+
+      // Show user-friendly error message (only after first attempt fails)
+      if (reconnectAttempt > 1) {
+        let errorMsg;
+        if (errorMessage) {
+          // Use custom error message for specific error conditions
+          errorMsg = errorMessage;
+          if (!errorMessage.includes('Retrying')) {
+            errorMsg += retryDelay === 0 ? ' Retrying immediately...' : ` Retrying in ${retryDelay / 1000} second${retryDelay > 1000 ? 's' : ''}...`;
+          }
+        } else {
+          // Default message for normal disconnection
+          errorMsg = `Connection lost. ${retryDelay === 0 ? 'Retrying immediately...' : `Retrying in ${retryDelay / 1000} second${retryDelay > 1000 ? 's' : ''}...`}`;
+        }
+        showConnectionError(errorMsg, 6000);
+      }
+
+      // Schedule retry with backoff
+      reconnectTimeout = setTimeout(() => {
+        if (state.network.roomCode) {
+          console.log('[Gweet] Executing scheduled reconnection...');
+          connectToGweet();
+        }
+      }, retryDelay);
     }
 
     // Gweet connection management
@@ -380,9 +658,21 @@
       // Skip in offline mode
       if (state.isOffline()) return;
 
-      // Disconnect existing connection
+      console.log(`[Gweet] Attempting to connect to room: ${state.network.roomCode} (attempt #${reconnectAttempt + 1})`);
+
+      // Reset streaming message processing flag and queue
+      processStreamingMessages = false;
+      streamingMessageQueue = [];
+
+      // Disconnect existing connection and clear any pending reconnect
       if (state.network.controller) {
         state.network.controller.abort();
+      }
+
+      // Clear any pending reconnection timeout
+      if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout);
+        reconnectTimeout = null;
       }
 
       const channelKey = `justone-stavros-${state.network.roomCode.toLowerCase()}`;
@@ -401,84 +691,39 @@
         // Process historical messages
         const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
         if (historyData.messages) {
-          // First pass: Find the highest wordIndex from all recent messages.
-          let maxWordIndex = state.game.wordIndex;
+          // Process all historical messages through the message log system
           for (let i = 0; i < historyData.messages.length; i++) {
             const msg = historyData.messages[i];
             // Skip messages older than 10 minutes
             if (new Date(msg.created) < tenMinutesAgo) continue;
 
-            // Check for wordIndex in newGame messages
-            if (msg.values?.type?.[0] === 'newGame' && msg.values?.wordIndex?.[0]) {
-              const idx = parseInt(msg.values.wordIndex[0], 10);
-              if (!isNaN(idx) && idx > maxWordIndex) {
-                maxWordIndex = idx;
-              }
-            }
-          }
-          // Apply the maximum word index found
-          state.game.wordIndex = maxWordIndex;
-
-          // Second pass: Find last endGame/endRound and collect playerJoined messages after it
-          let lastEndIdx = -1;
-          activePlayers.clear();
-
-          for (let i = historyData.messages.length - 1; i >= 0; i--) {
-            const msg = historyData.messages[i];
-            // Stop looking if message is too old
-            if (new Date(msg.created) < tenMinutesAgo) break;
-            // Found the last endGame or endRound
-            if (msg.values?.type?.[0] === 'endGame' || msg.values?.type?.[0] === 'endRound') {
-              lastEndIdx = i;
-              break;
-            }
-          }
-
-          // Count playerJoined messages after last end
-          for (let i = lastEndIdx + 1; i < historyData.messages.length; i++) {
-            const msg = historyData.messages[i];
-            // Skip messages older than 10 minutes
-            if (new Date(msg.created) < tenMinutesAgo) continue;
-
-            // Track playerJoined messages
-            if (msg.values?.type?.[0] === 'playerJoined' && msg.values?.user?.[0]) {
-              const username = msg.values?.username?.[0] || 'Anonymous';
-              activePlayers.set(msg.values.user[0], username);
-            }
-          }
-
-          // Update player count display
-          updatePlayerCount();
-
-          // Third pass: Process messages after last endRound for game state
-          let lastEndRoundIdx = -1;
-          let lastNewGameIdx = -1;
-          for (let i = historyData.messages.length - 1; i >= 0; i--) {
-            const msg = historyData.messages[i];
-            // Stop looking if message is too old
-            if (new Date(msg.created) < tenMinutesAgo) break;
-            // Found the last endRound
-            if (msg.values?.type?.[0] === 'endRound') {
-              lastEndRoundIdx = i;
-              break;
-            }
-            // Track last newGame
-            if (msg.values?.type?.[0] === 'newGame') {
-              lastNewGameIdx = i;
-            }
-          }
-
-          // Clear submissions before processing game state
-          state.submissions = [];
-
-          // Process messages after last endRound (or all if no endRound found)
-          for (let i = lastEndRoundIdx + 1; i < historyData.messages.length; i++) {
-            const msg = historyData.messages[i];
-            // Skip messages older than 10 minutes
-            if (new Date(msg.created) < tenMinutesAgo) continue;
-            handleGweetMessage(msg.values);
+            // Pass message with timestamp
+            const timestamp = new Date(msg.created).getTime();
+            handleGweetMessage(msg.values, timestamp);
           }
         }
+
+        // Process any streaming messages that arrived during historical fetch
+        if (streamingMessageQueue.length > 0) {
+          console.log(`[Gweet] Processing ${streamingMessageQueue.length} queued streaming messages`);
+
+          // Sort queued messages by timestamp
+          streamingMessageQueue.sort((a, b) => a.timestamp - b.timestamp);
+
+          // Process each queued message
+          for (const queuedMsg of streamingMessageQueue) {
+            handleGweetMessage(queuedMsg.data, queuedMsg.timestamp);
+          }
+
+          // Clear the queue
+          streamingMessageQueue = [];
+        }
+
+        // Now enable processing of new streaming messages
+        processStreamingMessages = true;
+
+        // Replay state once after all messages (historical + queued) are added
+        updateGameState();
 
         // Establish streaming connection
         const streamResponse = await fetch(
@@ -490,8 +735,10 @@
           throw new Error(`Failed to connect to stream: ${streamResponse.status} ${streamResponse.statusText}`);
         }
 
-        // Connection successful - hide any existing errors
+        // Connection successful - hide any existing errors and reset reconnect attempts
+        console.log('[Gweet] Successfully connected to streaming endpoint');
         hideConnectionError();
+        reconnectAttempt = 0;
 
         const reader = streamResponse.body.getReader();
         const decoder = new TextDecoder();
@@ -499,7 +746,11 @@
 
         while (true) {
           const { done, value } = await reader.read();
-          if (done) break;
+          if (done) {
+            // Stream ended (connection closed)
+            console.error('[Gweet] Streaming connection closed unexpectedly');
+            break;
+          }
 
           buffer += decoder.decode(value, { stream: true });
           const lines = buffer.split('\n');
@@ -510,7 +761,20 @@
               try {
                 const data = JSON.parse(line);
                 if (data.values) {
-                  handleGweetMessage(data.values);
+                  // Check if we should queue or process the message
+                  if (!processStreamingMessages) {
+                    // Queue the message with timestamp
+                    const timestamp = data.created ? new Date(data.created).getTime() : Date.now();
+                    streamingMessageQueue.push({
+                      data: data.values,
+                      timestamp: timestamp
+                    });
+                  } else {
+                    // Process the message normally
+                    handleGweetMessage(data.values);
+                    // Replay state after receiving a real-time message
+                    updateGameState();
+                  }
                 }
               } catch (e) {
                 console.error('Error parsing message:', e);
@@ -518,30 +782,31 @@
             }
           }
         }
+
+        // If we reach here, the stream was closed
+        console.error('[Gweet] Stream ended - connection was closed by the server');
+        console.log('[Gweet] Will attempt to reconnect...');
+
+        // Schedule reconnection when stream ends normally
+        scheduleReconnect();
       } catch (error) {
         if (error.name !== 'AbortError') {
-          console.error('Gweet connection error:', error);
+          console.error('[Gweet] Connection error:', error.message);
 
-          // Show user-friendly error message
-          let errorMsg = 'Unable to connect to Gweet server. ';
+          // Build user-friendly error message based on error type
+          let errorMsg = 'Unable to connect to Gweet server.';
           if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-            errorMsg += 'Please check your internet connection.';
+            errorMsg = 'Unable to connect to Gweet server. Please check your internet connection.';
           } else if (error.message.includes('404')) {
-            errorMsg += 'Room not found or expired.';
+            errorMsg = 'Room not found or expired.';
           } else if (error.message.includes('500') || error.message.includes('502') || error.message.includes('503')) {
-            errorMsg += 'Server is temporarily unavailable.';
-          } else {
-            errorMsg += 'Retrying in 5 seconds...';
+            errorMsg = 'Server is temporarily unavailable.';
           }
 
-          showConnectionError(errorMsg, 6000);
-
-          // Retry after 5 seconds
-          setTimeout(() => {
-            if (state.network.roomCode) {
-              connectToGweet();
-            }
-          }, 5000);
+          // Schedule reconnection with the error message
+          scheduleReconnect(errorMsg);
+        } else {
+          console.log('[Gweet] Connection aborted intentionally');
         }
       }
     }
@@ -581,11 +846,12 @@
     }
 
     // Handle incoming Gweet messages
-    function handleGweetMessage(data) {
-      let type, word, lang, user, username, wordIndex;
+    function handleGweetMessage(data, timestamp) {
+      let messageId, type, word, lang, user, username, wordIndex;
 
       // Parse message based on format
       if (typeof data === 'object' && data !== null) {
+        messageId = data.messageId?.[0];
         type = data.type?.[0];
         word = data.word?.[0];
         lang = data.lang?.[0];
@@ -596,11 +862,12 @@
         try {
           const jsonData = JSON.parse(data);
           if (jsonData.values) {
-            return handleGweetMessage(jsonData.values);
+            return handleGweetMessage(jsonData.values, timestamp);
           }
         } catch {
           // Parse as URL-encoded
           const params = new URLSearchParams(data);
+          messageId = params.get('messageId');
           type = params.get('type');
           word = params.get('word');
           lang = params.get('lang');
@@ -610,64 +877,41 @@
         }
       }
 
-      // Process based on message type
-      if (type === 'newGame') {
-        // Track the highest word index seen.
-        if (wordIndex) {
-          const idx = parseInt(wordIndex, 10);
-          if (!isNaN(idx) && idx > state.game.wordIndex) {
-            state.game.wordIndex = idx;
-          }
+      // If no message ID, generate one (for backward compatibility with older messages)
+      if (!messageId) {
+        messageId = 'legacy-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+      }
+
+      // Track the highest word index seen (outside of message log)
+      if (type === 'newGame' && wordIndex) {
+        const idx = parseInt(wordIndex, 10);
+        if (!isNaN(idx) && idx > state.game.wordIndex) {
+          state.game.wordIndex = idx;
         }
-        // Set network state to IN_PROGRESS
-        state.network.status = "IN_PROGRESS";
+      }
 
-        // Set current user's role - restore state if rejoining
-        if (user === state.network.clientId) {
-          state.network.userRole = 'wordHolder';
-          // Restore the word for the word holder
-          state.game.word = word;
-          state.game.language = lang || 'en';
-        } else {
-          state.network.userRole = 'clueGiver';
-          state.game.word = word;
-          state.game.language = lang || 'en';
-          // Update language selector
-          document.querySelector(`[name="lang"][value="${state.game.language}"]`).checked = true;
+      // Build message data object
+      const messageData = {};
+      if (word) messageData.word = word;
+      if (lang) messageData.lang = lang;
+      if (username) messageData.username = username;
+      // Note: wordIndex is deliberately not included in message data for replay
+
+      // Add message to log (will trigger state replay)
+      const wasAdded = addMessageToLog(
+        messageId,
+        type,
+        messageData,
+        user || 'unknown',
+        timestamp || Date.now()
+      );
+
+      // Update language selector if needed
+      if (state.game.language) {
+        const langRadio = document.querySelector(`[name="lang"][value="${state.game.language}"]`);
+        if (langRadio && !langRadio.checked) {
+          langRadio.checked = true;
         }
-
-        // Don't reset submissions - they will be populated by submitWord messages
-        updateSubmittedWordsDisplay();
-
-        // Update button visibility
-        updateButtonVisibility();
-      } else if (type === 'submitWord' && word) {
-        // Word submitted by a player
-        const submission = { word, user, username: username || 'Anonymous' };
-        // Check if this word hasn't been added already (by user AND word combo)
-        if (!state.submissions.some(s => s.word === word && s.user === user)) {
-          state.submissions.push(submission);
-          updateSubmittedWordsDisplay();
-        }
-      } else if (type === 'endRound') {
-        // Round ended by another player
-        handleEndRound();
-      } else if (type === 'playerJoined' && user) {
-        // Player joined the room
-        const playerName = username || 'Anonymous';
-        activePlayers.set(user, playerName);
-        updatePlayerCount();
-      } else if (type === 'endGame') {
-        // Game ended, clear player list
-        activePlayers.clear();
-        updatePlayerCount();
-
-        // Re-announce ourselves so we appear in the lobby for the next round
-        setTimeout(() => {
-          sendGweetMessage({
-            type: 'playerJoined'
-          });
-        }, 100);
       }
     }
 
@@ -675,8 +919,25 @@
     async function sendGweetMessage(message) {
       if (!state.network.roomCode || state.network.status === "OFFLINE") return;
 
+      // Generate unique message ID
+      const messageId = generateMessageId();
+
+      // Add message to local log immediately
+      const messageData = {
+        ...message,
+        username: state.network.username || 'Anonymous'
+      };
+
+      addMessageToLog(messageId, message.type, messageData, state.network.clientId);
+
+      // Replay state after adding our own message
+      updateGameState();
+
       const channelKey = `justone-stavros-${state.network.roomCode.toLowerCase()}`;
       const params = new URLSearchParams();
+
+      // Add message ID
+      params.append('messageId', messageId);
 
       // Add user UUID to all messages
       params.append('user', state.network.clientId);
@@ -785,6 +1046,12 @@
       // Hide the modal
       submittedWordsDiv.classList.add('hidden');
 
+      // Get the user's own submission and set it as the clue
+      const ownSubmission = state.getOwnSubmission();
+      if (ownSubmission) {
+        clueInner.textContent = ownSubmission.word;
+      }
+
       // Show the clue in fullscreen
       show('clue');
       enterFullscreen();
@@ -830,10 +1097,17 @@
       }
     }
 
-    // Handle ending the round (clears state and returns to menu)
-    function handleEndRound() {
-      // Use the GameState reset method
-      state.reset();
+    // End Round button handler
+    endRoundBtn.addEventListener('click', () => {
+      // Show confirmation dialog
+      if (!confirm('Are you sure you want to end the round for everyone?')) {
+        return;
+      }
+
+      // Send endRound message (this will update state through the message log)
+      sendGweetMessage({
+        type: 'endRound'
+      });
 
       // Reset visual states
       wordInner.classList.remove('blurred');
@@ -842,22 +1116,6 @@
 
       // Return to main menu (show() will call updateButtonVisibility)
       show('menu');
-    }
-
-    // End Round button handler
-    endRoundBtn.addEventListener('click', () => {
-      // Show confirmation dialog
-      if (!confirm('Are you sure you want to end the round for everyone?')) {
-        return;
-      }
-
-      // Send endRound message to other players
-      sendGweetMessage({
-        type: 'endRound'
-      });
-
-      // Handle the end round locally
-      handleEndRound();
     });
 
     // View management
@@ -981,11 +1239,7 @@
       const newWord = shuffled[currentIndex % shuffled.length];
       state.game.wordIndex = currentIndex + 1;
 
-      // Use GameState helper method
-      state.startNewGame(newWord, state.game.language, 'wordHolder');
-      updateSubmittedWordsDisplay();
-
-      // Send new game message to other players
+      // Send new game message (this will update state through the message log)
       sendGweetMessage({
         type: 'newGame',
         word: newWord,
@@ -1318,11 +1572,7 @@
         word: val
       });
 
-      // Add to local submitted words
-      state.submissions.push({ word: val, user: state.network.clientId, username: state.network.username });
-
-      // Store the clue but don't show it yet
-      clueInner.textContent = val;
+      // Note: The submission will be added to state via the message log when sendGweetMessage processes it
 
       // Show the submitted words modal instead of going directly to clue display
       updateSubmittedWordsDisplay();
