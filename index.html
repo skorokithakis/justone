@@ -380,8 +380,7 @@
       // Send playerJoined message after connection is established
       setTimeout(() => {
         sendGweetMessage({
-          type: 'playerJoined',
-          username: state.network.username
+          type: 'playerJoined'
         });
       }, 500);
     }
@@ -662,6 +661,13 @@
         // Game ended, clear player list
         activePlayers.clear();
         updatePlayerCount();
+
+        // Re-announce ourselves so we appear in the lobby for the next round
+        setTimeout(() => {
+          sendGweetMessage({
+            type: 'playerJoined'
+          });
+        }, 100);
       }
     }
 

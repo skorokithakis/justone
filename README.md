@@ -78,13 +78,13 @@ The protocol uses three message types sent via URL-encoded POST requests:
    - Sets the sender as `wordHolder` and all others as `clueGiver`
    - Transitions network state to IN_PROGRESS
 
-2. **Submit Word** (`type=submitWord`) 
+2. **Submit Word** (`type=submitWord`)
    - Sent when a clue-giver submits their one-word clue
    - Contains: `word` (the clue), `user` (UUID)
    - Collects all submitted clues for display with duplicate prevention
 
 3. **End Round** (`type=endRound`)
-   - Sent when any player clicks "End Round" 
+   - Sent when any player clicks "End Round"
    - Clears all game state and returns players to main menu
    - Transitions network state to ENDED
 
@@ -163,11 +163,11 @@ GameState = {
     wordDisplay: '',    // Display state: 'hidden', 'countdown', 'visible', 'blurred'
     countdownTimer: null // Timer ID for countdown
   },
-  
+
   view: {
     current: 'menu'     // Current view: 'menu', 'word', 'clueIn', 'clue'
   },
-  
+
   network: {
     status: 'ENDED',    // Network state: 'OFFLINE', 'IN_PROGRESS', 'ENDED'
     roomCode: '',       // 4-letter room code
@@ -175,7 +175,7 @@ GameState = {
     userRole: null,     // Player role: 'wordHolder', 'clueGiver', or null
     controller: null    // WebSocket controller for connection management
   },
-  
+
   submissions: []       // Array of submitted clues: {word: string, user: string}
 }
 ```
