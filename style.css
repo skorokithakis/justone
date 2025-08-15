@@ -4,6 +4,17 @@
   padding: 0;
 }
 
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
 html, body {
   height: 100%;
   width: 100%;
@@ -295,6 +306,60 @@ button.disabled {
 
 #roomBadge:hover {
   background: #ffc9c9;
+}
+
+/* Connection Error Notification */
+.connection-error {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  background: linear-gradient(135deg, #ff6b6b, #ff4444);
+  color: white;
+  padding: 1rem 1.4rem;
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(255, 68, 68, 0.3);
+  z-index: 1000;
+  max-width: 320px;
+  animation: slideIn 0.3s ease-out;
+  pointer-events: auto;
+}
+
+.connection-error.hidden {
+  display: none !important;
+  pointer-events: none;
+}
+
+.error-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.error-title {
+  font-weight: bold;
+}
+
+.error-close {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0;
+  margin: -0.5rem -0.5rem 0 0.5rem;
+  opacity: 0.9;
+  transition: opacity 0.2s;
+}
+
+.error-close:hover {
+  opacity: 1;
+}
+
+.error-message {
+  font-size: 0.9rem;
+  opacity: 0.95;
+  line-height: 1.4;
 }
 
 #roomBadge.hidden {
