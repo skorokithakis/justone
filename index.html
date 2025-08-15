@@ -462,6 +462,7 @@
 
           // Third pass: Process messages after last endRound for game state
           let lastEndRoundIdx = -1;
+          let lastNewGameIdx = -1;
           for (let i = historyData.messages.length - 1; i >= 0; i--) {
             const msg = historyData.messages[i];
             // Stop looking if message is too old
@@ -471,7 +472,14 @@
               lastEndRoundIdx = i;
               break;
             }
+            // Track last newGame
+            if (msg.values?.type?.[0] === 'newGame') {
+              lastNewGameIdx = i;
+            }
           }
+
+          // Clear submissions before processing game state
+          state.submissions = [];
 
           // Process messages after last endRound (or all if no endRound found)
           for (let i = lastEndRoundIdx + 1; i < historyData.messages.length; i++) {
@@ -624,9 +632,12 @@
         // Set network state to IN_PROGRESS
         state.network.status = "IN_PROGRESS";
 
-        // Set current user's role
+        // Set current user's role - restore state if rejoining
         if (user === state.network.clientId) {
           state.network.userRole = 'wordHolder';
+          // Restore the word for the word holder
+          state.game.word = word;
+          state.game.language = lang || 'en';
         } else {
           state.network.userRole = 'clueGiver';
           state.game.word = word;
@@ -635,8 +646,7 @@
           document.querySelector(`[name="lang"][value="${state.game.language}"]`).checked = true;
         }
 
-        // Reset submitted words
-        state.submissions = [];
+        // Don't reset submissions - they will be populated by submitWord messages
         updateSubmittedWordsDisplay();
 
         // Update button visibility
@@ -644,7 +654,7 @@
       } else if (type === 'submitWord' && word) {
         // Word submitted by a player
         const submission = { word, user, username: username || 'Anonymous' };
-        // Check if this word hasn't been added already
+        // Check if this word hasn't been added already (by user AND word combo)
         if (!state.submissions.some(s => s.word === word && s.user === user)) {
           state.submissions.push(submission);
           updateSubmittedWordsDisplay();

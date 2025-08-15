@@ -96,12 +96,25 @@ const GameState = {
   }
 };
 
-// Initialize client ID on load
-GameState.network.clientId = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-  const r = Math.random() * 16 | 0;
-  const v = c === 'x' ? r : (r & 0x3 | 0x8);
-  return v.toString(16);
-});
+// Initialize client ID on load - persist in localStorage
+function getOrCreateUUID() {
+  const storageKey = 'justone-uuid';
+  let uuid = localStorage.getItem(storageKey);
+
+  if (!uuid) {
+    // Generate new UUID if not found
+    uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      const r = Math.random() * 16 | 0;
+      const v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+    localStorage.setItem(storageKey, uuid);
+  }
+
+  return uuid;
+}
+
+GameState.network.clientId = getOrCreateUUID();
 
 // Export for use in main script
 window.GameState = GameState;
