@@ -922,16 +922,20 @@
       // Generate unique message ID
       const messageId = generateMessageId();
 
-      // Add message to local log immediately
+      // Add message to local log immediately (except for endRound)
+      // endRound messages should only be added when received from the server
+      // to prevent race conditions with playerJoined messages
       const messageData = {
         ...message,
         username: state.network.username || 'Anonymous'
       };
 
-      addMessageToLog(messageId, message.type, messageData, state.network.clientId);
+      if (message.type !== 'endRound') {
+        addMessageToLog(messageId, message.type, messageData, state.network.clientId);
 
-      // Replay state after adding our own message
-      updateGameState();
+        // Replay state after adding our own message
+        updateGameState();
+      }
 
       const channelKey = `justone-stavros-${state.network.roomCode.toLowerCase()}`;
       const params = new URLSearchParams();
@@ -1104,7 +1108,7 @@
         return;
       }
 
-      // Send endRound message (this will update state through the message log)
+      // Send endRound message (state will update when received from server)
       sendGweetMessage({
         type: 'endRound'
       });
