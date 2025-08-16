@@ -16,16 +16,6 @@
   <link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+Mono+TC&display=swap" rel="stylesheet">
   <title>Just One</title>
   <script src="./game.js"></script>
-  <script>
-    // Register service worker to clear old caches.
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-          .then(registration => console.log('Service Worker registered for cache cleanup'))
-          .catch(err => console.log('Service Worker registration failed:', err));
-      });
-    }
-  </script>
 </head>
 
 <body>
