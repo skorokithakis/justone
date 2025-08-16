@@ -90,6 +90,36 @@
   </div>
 
   <script>
+    // Service worker cleanup - unregister any existing service workers.
+    // This ensures old cached service workers are removed on all devices.
+    if ('serviceWorker' in navigator) {
+      // First, try to register our self-unregistering service worker.
+      // This will replace any existing service worker with one that immediately unregisters itself.
+      navigator.serviceWorker.register('./sw.js?v=' + Date.now())
+        .then(registration => {
+          console.log('Cleanup service worker registered');
+
+          // Also check for any other registrations and unregister them.
+          navigator.serviceWorker.getRegistrations().then(registrations => {
+            registrations.forEach(registration => {
+              registration.unregister();
+              console.log('Unregistered service worker:', registration.scope);
+            });
+          });
+        })
+        .catch(error => {
+          console.log('Service worker registration failed:', error);
+
+          // Even if registration fails, try to unregister any existing workers.
+          navigator.serviceWorker.getRegistrations().then(registrations => {
+            registrations.forEach(registration => {
+              registration.unregister();
+              console.log('Unregistered service worker:', registration.scope);
+            });
+          });
+        });
+    }
+
     // Dynamic text scaling function (FitText.js-like)
     function fitText(element, minFontSize = 20, maxFontSize = 300) {
       if (!element || !element.textContent.trim()) return;
