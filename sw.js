@@ -19,12 +19,6 @@ self.addEventListener('activate', function(event) {
       // Take control of all clients immediately.
       await self.clients.claim();
 
-      // Get all clients and reload them to ensure fresh content.
-      const clients = await self.clients.matchAll({ type: 'window' });
-      clients.forEach(client => {
-        client.navigate(client.url);
-      });
-
       // Unregister this service worker after cleanup.
       await self.registration.unregister();
       console.log('Service worker unregistered after cache cleanup');
