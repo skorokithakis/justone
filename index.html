@@ -315,6 +315,12 @@
             // Clear word display and return everyone to lobby
             wordInner.textContent = '';
             state.game.wordDisplay = 'hidden';
+
+            // Clean up any visual states that might persist
+            wordInner.classList.remove('blurred');
+            document.getElementById('wordText').classList.remove('word-blurred');
+            document.getElementById('clueText').classList.remove('word-blurred');
+
             show('menu');
             break;
         }

@@ -1,12 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(jj diff:*)",
-      "Bash(jj describe:*)",
-      "Bash(pre-commit run:*)"
+      "Bash(rm:*)",
+      "Bash(grep:*)",
+      "Bash(pre-commit run:*)",
+      "Bash(jj describe:*)"
     ],
-    "deny": [],
-    "ask": [],
-    "defaultMode": "acceptEdits"
+    "deny": []
   }
 }
