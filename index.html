@@ -1179,7 +1179,8 @@
 
       // End Round button visibility
       const showEndRound = isInProgress && !isOffline &&
-        (state.view.current === 'menu' || state.view.current === 'word' || state.view.current === 'clue');
+        (state.view.current === 'menu' || state.view.current === 'word' || state.view.current === 'clue' ||
+         !submittedWordsDiv.classList.contains('hidden'));
       endRoundBtn.classList.toggle('hidden', !showEndRound);
     }
 
