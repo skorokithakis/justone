@@ -210,36 +210,37 @@
       return 'msg-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
     }
 
-    // Extract the authoritative score from the first endRound after the last newGame.
-    // This prevents counting duplicate scores when multiple players end the round simultaneously.
+    // Extract the authoritative score from the message history.
+    // Algorithm:
+    // 1. Find the last endRound message
+    // 2. Find the last newGame message BEFORE that endRound
+    // 3. Find the first endRound message AFTER that newGame
+    // This handles players joining at any point and ensures consistent scoring.
     function extractAuthoritativeScore() {
-      // Find the last newGame message
-      let lastNewGameIndex = -1;
+      // Find the last endRound message
+      let lastEndRoundIndex = -1;
       for (let i = messageLog.length - 1; i >= 0; i--) {
-        if (messageLog[i].type === 'newGame') {
-          lastNewGameIndex = i;
+        if (messageLog[i].type === 'endRound') {
+          lastEndRoundIndex = i;
           break;
         }
       }
 
-      // If no newGame found, return zero scores
-      if (lastNewGameIndex < 0) {
+      // If no endRound found, we might be in the first round - return zero scores
+      if (lastEndRoundIndex < 0) {
         return { totalScore: 0, totalGames: 0 };
       }
 
-      // Find the first endRound after the last newGame
-      for (let i = lastNewGameIndex + 1; i < messageLog.length; i++) {
-        const msg = messageLog[i];
-        if (msg.type === 'endRound' && msg.data) {
-          // Return the score from the first endRound found
-          return {
-            totalScore: msg.data.totalScore !== undefined ? msg.data.totalScore : 0,
-            totalGames: msg.data.totalGames !== undefined ? msg.data.totalGames : 0
-          };
-        }
+      // The last endRound has the most recent authoritative score
+      const lastEndRound = messageLog[lastEndRoundIndex];
+      if (lastEndRound.data) {
+        return {
+          totalScore: lastEndRound.data.totalScore !== undefined ? lastEndRound.data.totalScore : 0,
+          totalGames: lastEndRound.data.totalGames !== undefined ? lastEndRound.data.totalGames : 0
+        };
       }
 
-      // No endRound found after the last newGame, return zero scores
+      // Fallback if the endRound message doesn't have score data
       return { totalScore: 0, totalGames: 0 };
     }
 
@@ -1346,6 +1347,9 @@
 
     // Skip round function - doesn't affect score or game count
     function skipRound() {
+      // Show skip notification to the player who skipped
+      showSkipNotification(state.game.word, 'You');
+
       // Send endRound message with skipped flag (if online)
       if (!state.isOffline()) {
         sendGweetMessage({
