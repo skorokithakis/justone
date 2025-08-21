@@ -1251,6 +1251,16 @@
     }
 
     function endRoundWithScore(score) {
+      // Prevent race condition: only allow scoring when game is in progress
+      if (!inGame) {
+        console.log('Score attempt ignored - no game in progress');
+        hideScoringModal();
+        return;
+      }
+
+      // Immediately mark game as ended to prevent duplicate scoring
+      inGame = false;
+
       // Calculate new totals
       const newTotalScore = state.scoring.totalScore + score;
       const newTotalGames = state.scoring.totalGames + 1;
