@@ -21,6 +21,9 @@
 <body>
   <div id="app">
     <div id="mainMenu">
+      <div id="scoreDisplay">
+        Score: <span id="scoreValue">0</span> | Games: <span id="gamesValue">0</span>
+      </div>
       <div id="langPicker">
         <label><input type="radio" name="lang" value="en" checked> English</label>
         <label><input type="radio" name="lang" value="gr"> Greek</label>
@@ -86,6 +89,23 @@
         <button class="error-close" onclick="hideConnectionError()">✕</button>
       </div>
       <div id="errorMessage" class="error-message"></div>
+    </div>
+
+    <div id="scoreNotification" class="score-notification hidden">
+      <div id="scoreNotificationText"></div>
+    </div>
+
+    <div id="scoringModal" class="modal hidden">
+      <div class="modal-content">
+        <h2>How did the round go?</h2>
+        <div id="scoringWord" class="scoring-word"></div>
+        <div class="scoring-buttons">
+          <button id="correctBtn" class="scoring-btn correct">✓ Correct<br><span class="score-value">(+1)</span></button>
+          <button id="passBtn" class="scoring-btn neutral">→ Pass<br><span class="score-value">(0)</span></button>
+          <button id="failBtn" class="scoring-btn fail">✗ Fail<br><span class="score-value">(-1)</span></button>
+        </div>
+        <button id="cancelScoringBtn" class="cancel-btn">Cancel</button>
+      </div>
     </div>
   </div>
 
@@ -230,19 +250,32 @@
       state.network.userRole = null;
       state.submissions = [];
 
+      // Reset scoring to initial state (will be rebuilt from messages)
+      state.scoring.totalScore = 0;
+      state.scoring.totalGames = 0;
+
       // Clear active players
       activePlayers.clear();
+
+      // IMPORTANT: Extract scoring from the most recent endRound message BEFORE filtering
+      // This ensures new joiners get the correct cumulative score
+      for (let i = messageLog.length - 1; i >= 0; i--) {
+        const msg = messageLog[i];
+        if (msg.type === 'endRound' && msg.data) {
+          // Found the most recent endRound - use its scoring data as baseline
+          if (msg.data.totalScore !== undefined) {
+            state.scoring.totalScore = msg.data.totalScore;
+          }
+          if (msg.data.totalGames !== undefined) {
+            state.scoring.totalGames = msg.data.totalGames;
+          }
+          break; // Stop after finding the most recent endRound
+        }
+      }
 
       // Get filtered messages to replay
       const messages = getFilteredMessages();
 
-      // Log the message queue being processed
-      console.log('Processing message queue:', messages.map(m => ({
-        type: m.type,
-        sender: m.sender,
-        data: m.data,
-        timestamp: new Date(m.timestamp).toLocaleTimeString()
-      })));
 
       // Default to ENDED status if not offline (ready to start a new game).
       // This will be overridden if we replay a newGame message.
@@ -304,6 +337,23 @@
             break;
 
           case 'endRound':
+            // Always use the totalScore and totalGames from the most recent endRound message
+            // This ensures all players have synchronized scores
+            if (msg.data.totalScore !== undefined) {
+              state.scoring.totalScore = msg.data.totalScore;
+            }
+            if (msg.data.totalGames !== undefined) {
+              state.scoring.totalGames = msg.data.totalGames;
+            }
+
+            // Show score notification (only for recent messages, not during initial replay)
+            if (msg.data.score !== undefined) {
+              const fiveSecondsAgo = Date.now() - 5000;
+              if (msg.timestamp > fiveSecondsAgo) {
+                showScoreNotification(msg.data.score, msg.data.word, msg.data.username);
+              }
+            }
+
             // Reset game state and clear player list
             inGame = false;
             state.game.word = '';
@@ -330,6 +380,7 @@
       updatePlayerCount();
       updateSubmittedWordsDisplay();
       updateButtonVisibility();
+      updateScoreDisplay();
 
       // Check if we need to announce ourselves after replay
       // This handles the case where endRound cleared the player list
@@ -480,8 +531,9 @@
     // Track unique players who have joined (store as Map of id -> username)
     const activePlayers = new Map();
 
-    // Initialize button visibility on load
+    // Initialize button visibility and score display on load
     updateButtonVisibility();
+    updateScoreDisplay();
 
     // Show room modal on load
     setTimeout(() => {
@@ -591,6 +643,8 @@
       updatePlayerCount();
       // Update button visibility for offline mode
       updateButtonVisibility();
+      // Hide score display in offline mode
+      updateScoreDisplay();
 
       // Clear any pending reconnection when going offline
       if (reconnectTimeout) {
@@ -853,7 +907,7 @@
 
     // Handle incoming Gweet messages
     function handleGweetMessage(data, timestamp) {
-      let messageId, type, word, lang, user, username, wordIndex;
+      let messageId, type, word, lang, user, username, wordIndex, score, totalScore, totalGames;
 
       // Parse message based on format
       if (typeof data === 'object' && data !== null) {
@@ -864,6 +918,10 @@
         user = data.user?.[0];
         username = data.username?.[0];
         wordIndex = data.wordIndex?.[0];
+        // Parse scoring fields
+        score = data.score?.[0];
+        totalScore = data.totalScore?.[0];
+        totalGames = data.totalGames?.[0];
       } else if (typeof data === 'string') {
         try {
           const jsonData = JSON.parse(data);
@@ -880,6 +938,10 @@
           user = params.get('user');
           username = params.get('username');
           wordIndex = params.get('wordIndex');
+          // Parse scoring fields
+          score = params.get('score');
+          totalScore = params.get('totalScore');
+          totalGames = params.get('totalGames');
         }
       }
 
@@ -901,6 +963,16 @@
       if (word) messageData.word = word;
       if (lang) messageData.lang = lang;
       if (username) messageData.username = username;
+      // Include scoring fields
+      if (score !== null && score !== undefined) {
+        messageData.score = parseInt(score, 10);
+      }
+      if (totalScore !== null && totalScore !== undefined) {
+        messageData.totalScore = parseInt(totalScore, 10);
+      }
+      if (totalGames !== null && totalGames !== undefined) {
+        messageData.totalGames = parseInt(totalGames, 10);
+      }
       // Note: wordIndex is deliberately not included in message data for replay
 
       // Add message to log (will trigger state replay)
@@ -1069,6 +1141,61 @@
       setTimeout(() => fitText(clueInner), 100);
     });
 
+    // Update score display
+    function updateScoreDisplay() {
+      const scoreDisplay = document.getElementById('scoreDisplay');
+      const scoreValue = document.getElementById('scoreValue');
+      const gamesValue = document.getElementById('gamesValue');
+
+      // Hide score display in offline mode
+      if (state.network.status === "OFFLINE") {
+        scoreDisplay.style.display = 'none';
+      } else {
+        scoreDisplay.style.display = 'block';
+        if (scoreValue && gamesValue) {
+          scoreValue.textContent = state.scoring.totalScore;
+          gamesValue.textContent = state.scoring.totalGames;
+        }
+      }
+    }
+
+    // Show score notification
+    function showScoreNotification(score, word, scoredBy) {
+      const notification = document.getElementById('scoreNotification');
+      const text = document.getElementById('scoreNotificationText');
+
+      let message = '';
+      let className = '';
+
+      if (score === 1) {
+        message = `✓ Correct! +1 point`;
+        className = 'success';
+      } else if (score === 0) {
+        message = `→ Pass! No points`;
+        className = 'neutral';
+      } else if (score === -1) {
+        message = `✗ Failed! -1 point`;
+        className = 'fail';
+      }
+
+      if (word) {
+        message += ` (${word})`;
+      }
+
+      if (scoredBy) {
+        message += ` - scored by ${scoredBy}`;
+      }
+
+      text.textContent = message;
+      notification.className = `score-notification ${className}`;
+      notification.classList.remove('hidden');
+
+      // Auto-hide after 4 seconds
+      setTimeout(() => {
+        notification.classList.add('hidden');
+      }, 4000);
+    }
+
     // Update player count display
     function updatePlayerCount() {
       const playerCountDiv = document.getElementById('playerCount');
@@ -1107,17 +1234,50 @@
       }
     }
 
-    // End Round button handler
-    endRoundBtn.addEventListener('click', () => {
-      // Show confirmation dialog
-      if (!confirm('Are you sure you want to end the round for everyone?')) {
-        return;
+    // Scoring modal functions
+    function showScoringModal() {
+      const modal = document.getElementById('scoringModal');
+      const wordDiv = document.getElementById('scoringWord');
+
+      // Show the word being scored
+      wordDiv.textContent = state.game.word ? `Word was: ${state.game.word}` : '';
+
+      modal.classList.remove('hidden');
+    }
+
+    function hideScoringModal() {
+      const modal = document.getElementById('scoringModal');
+      modal.classList.add('hidden');
+    }
+
+    function endRoundWithScore(score) {
+      // Calculate new totals
+      const newTotalScore = state.scoring.totalScore + score;
+      const newTotalGames = state.scoring.totalGames + 1;
+
+      // Update state immediately
+      state.scoring.totalScore = newTotalScore;
+      state.scoring.totalGames = newTotalGames;
+
+      // Update score display
+      updateScoreDisplay();
+
+      // Show notification
+      showScoreNotification(score, state.game.word, state.network.username || 'You');
+
+      // Send endRound message with scoring data (if online)
+      if (!state.isOffline()) {
+        sendGweetMessage({
+          type: 'endRound',
+          score: score,
+          totalScore: newTotalScore,
+          totalGames: newTotalGames,
+          word: state.game.word
+        });
       }
 
-      // Send endRound message (state will update when received from server)
-      sendGweetMessage({
-        type: 'endRound'
-      });
+      // Hide modal
+      hideScoringModal();
 
       // Reset visual states
       wordInner.classList.remove('blurred');
@@ -1126,6 +1286,18 @@
 
       // Return to main menu (show() will call updateButtonVisibility)
       show('menu');
+    }
+
+    // Scoring button handlers
+    document.getElementById('correctBtn').addEventListener('click', () => endRoundWithScore(1));
+    document.getElementById('passBtn').addEventListener('click', () => endRoundWithScore(0));
+    document.getElementById('failBtn').addEventListener('click', () => endRoundWithScore(-1));
+    document.getElementById('cancelScoringBtn').addEventListener('click', hideScoringModal);
+
+    // End Round button handler
+    endRoundBtn.addEventListener('click', () => {
+      // Show scoring modal instead of confirmation
+      showScoringModal();
     });
 
     // View management

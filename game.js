@@ -31,6 +31,12 @@ const GameState = {
   // Submissions state
   submissions: [],      // Array of {word: string, user: string, username: string}
 
+  // Scoring state
+  scoring: {
+    totalScore: 0,            // Cumulative score across all rounds
+    totalGames: 0             // Total number of games played
+  },
+
   // Helper methods
   isOffline() {
     return this.network.status === 'OFFLINE';
