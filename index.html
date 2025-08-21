@@ -104,6 +104,7 @@
           <button id="passBtn" class="scoring-btn neutral">→ Pass<br><span class="score-value">(0)</span></button>
           <button id="failBtn" class="scoring-btn fail">✗ Fail<br><span class="score-value">(-1)</span></button>
         </div>
+        <button id="skipRoundBtn" class="skip-btn">Skip Round<br><span class="score-value">(not counted)</span></button>
         <button id="cancelScoringBtn" class="cancel-btn">Cancel</button>
       </div>
     </div>
@@ -355,6 +356,9 @@
             break;
 
           case 'endRound':
+            // Check if this round was skipped
+            const isSkipped = msg.data.skipped === true || msg.data.skipped === 'true';
+
             // Always use the totalScore and totalGames from the most recent endRound message
             // This ensures all players have synchronized scores
             if (msg.data.totalScore !== undefined) {
@@ -364,10 +368,14 @@
               state.scoring.totalGames = msg.data.totalGames;
             }
 
-            // Show score notification (only for recent messages, not during initial replay)
-            if (msg.data.score !== undefined) {
-              const fiveSecondsAgo = Date.now() - 5000;
-              if (msg.timestamp > fiveSecondsAgo) {
+            // Show appropriate notification (only for recent messages, not during initial replay)
+            const fiveSecondsAgo = Date.now() - 5000;
+            if (msg.timestamp > fiveSecondsAgo) {
+              if (isSkipped) {
+                // Show skip notification
+                showSkipNotification(msg.data.word, msg.data.username);
+              } else if (msg.data.score !== undefined) {
+                // Show score notification
                 showScoreNotification(msg.data.score, msg.data.word, msg.data.username);
               }
             }
@@ -925,7 +933,7 @@
 
     // Handle incoming Gweet messages
     function handleGweetMessage(data, timestamp) {
-      let messageId, type, word, lang, user, username, wordIndex, score, totalScore, totalGames;
+      let messageId, type, word, lang, user, username, wordIndex, score, totalScore, totalGames, skipped;
 
       // Parse message based on format
       if (typeof data === 'object' && data !== null) {
@@ -940,6 +948,7 @@
         score = data.score?.[0];
         totalScore = data.totalScore?.[0];
         totalGames = data.totalGames?.[0];
+        skipped = data.skipped?.[0];
       } else if (typeof data === 'string') {
         try {
           const jsonData = JSON.parse(data);
@@ -960,6 +969,7 @@
           score = params.get('score');
           totalScore = params.get('totalScore');
           totalGames = params.get('totalGames');
+          skipped = params.get('skipped');
         }
       }
 
@@ -990,6 +1000,9 @@
       }
       if (totalGames !== null && totalGames !== undefined) {
         messageData.totalGames = parseInt(totalGames, 10);
+      }
+      if (skipped !== null && skipped !== undefined) {
+        messageData.skipped = skipped;
       }
       // Note: wordIndex is deliberately not included in message data for replay
 
@@ -1214,6 +1227,31 @@
       }, 4000);
     }
 
+    // Show skip notification
+    function showSkipNotification(word, skippedBy) {
+      const notification = document.getElementById('scoreNotification');
+      const text = document.getElementById('scoreNotificationText');
+
+      let message = '⊘ Round skipped - not counted';
+
+      if (word) {
+        message += ` (${word})`;
+      }
+
+      if (skippedBy) {
+        message += ` - skipped by ${skippedBy}`;
+      }
+
+      text.textContent = message;
+      notification.className = 'score-notification neutral';
+      notification.classList.remove('hidden');
+
+      // Auto-hide after 4 seconds
+      setTimeout(() => {
+        notification.classList.add('hidden');
+      }, 4000);
+    }
+
     // Update player count display
     function updatePlayerCount() {
       const playerCountDiv = document.getElementById('playerCount');
@@ -1306,10 +1344,36 @@
       show('menu');
     }
 
+    // Skip round function - doesn't affect score or game count
+    function skipRound() {
+      // Send endRound message with skipped flag (if online)
+      if (!state.isOffline()) {
+        sendGweetMessage({
+          type: 'endRound',
+          skipped: true,
+          totalScore: state.scoring.totalScore,  // Send current score unchanged
+          totalGames: state.scoring.totalGames,  // Send current games unchanged
+          word: state.game.word
+        });
+      }
+
+      // Hide modal
+      hideScoringModal();
+
+      // Reset visual states
+      wordInner.classList.remove('blurred');
+      document.getElementById('wordText').classList.remove('word-blurred');
+      submittedWordsDiv.classList.add('hidden');
+
+      // Return to main menu
+      show('menu');
+    }
+
     // Scoring button handlers
     document.getElementById('correctBtn').addEventListener('click', () => endRoundWithScore(1));
     document.getElementById('passBtn').addEventListener('click', () => endRoundWithScore(0));
     document.getElementById('failBtn').addEventListener('click', () => endRoundWithScore(-1));
+    document.getElementById('skipRoundBtn').addEventListener('click', skipRound);
     document.getElementById('cancelScoringBtn').addEventListener('click', hideScoringModal);
 
     // End Round button handler

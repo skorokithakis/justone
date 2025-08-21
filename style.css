@@ -743,6 +743,36 @@ button.disabled {
   opacity: 0.8;
 }
 
+.skip-btn {
+  margin-top: 1rem;
+  background: #e8e8e8;
+  color: #555;
+  border: 2px solid #ccc;
+  padding: 1rem 1.5rem;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  border-radius: 6px;
+  width: 100%;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.skip-btn:hover {
+  background: #d8d8d8;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.skip-btn .score-value {
+  font-size: 0.9rem;
+  opacity: 0.7;
+  font-weight: normal;
+}
+
 .cancel-btn {
   background: #6c757d;
   color: white;
