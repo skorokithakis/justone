@@ -209,6 +209,39 @@
       return 'msg-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
     }
 
+    // Extract the authoritative score from the first endRound after the last newGame.
+    // This prevents counting duplicate scores when multiple players end the round simultaneously.
+    function extractAuthoritativeScore() {
+      // Find the last newGame message
+      let lastNewGameIndex = -1;
+      for (let i = messageLog.length - 1; i >= 0; i--) {
+        if (messageLog[i].type === 'newGame') {
+          lastNewGameIndex = i;
+          break;
+        }
+      }
+
+      // If no newGame found, return zero scores
+      if (lastNewGameIndex < 0) {
+        return { totalScore: 0, totalGames: 0 };
+      }
+
+      // Find the first endRound after the last newGame
+      for (let i = lastNewGameIndex + 1; i < messageLog.length; i++) {
+        const msg = messageLog[i];
+        if (msg.type === 'endRound' && msg.data) {
+          // Return the score from the first endRound found
+          return {
+            totalScore: msg.data.totalScore !== undefined ? msg.data.totalScore : 0,
+            totalGames: msg.data.totalGames !== undefined ? msg.data.totalGames : 0
+          };
+        }
+      }
+
+      // No endRound found after the last newGame, return zero scores
+      return { totalScore: 0, totalGames: 0 };
+    }
+
     // Filter messages based on rules:
     // - Messages within last 10 minutes
     // - Messages after last endRound message
@@ -250,28 +283,13 @@
       state.network.userRole = null;
       state.submissions = [];
 
-      // Reset scoring to initial state (will be rebuilt from messages)
-      state.scoring.totalScore = 0;
-      state.scoring.totalGames = 0;
-
       // Clear active players
       activePlayers.clear();
 
-      // IMPORTANT: Extract scoring from the most recent endRound message BEFORE filtering
-      // This ensures new joiners get the correct cumulative score
-      for (let i = messageLog.length - 1; i >= 0; i--) {
-        const msg = messageLog[i];
-        if (msg.type === 'endRound' && msg.data) {
-          // Found the most recent endRound - use its scoring data as baseline
-          if (msg.data.totalScore !== undefined) {
-            state.scoring.totalScore = msg.data.totalScore;
-          }
-          if (msg.data.totalGames !== undefined) {
-            state.scoring.totalGames = msg.data.totalGames;
-          }
-          break; // Stop after finding the most recent endRound
-        }
-      }
+      // Extract the authoritative score from message history
+      const authoritativeScore = extractAuthoritativeScore();
+      state.scoring.totalScore = authoritativeScore.totalScore;
+      state.scoring.totalGames = authoritativeScore.totalGames;
 
       // Get filtered messages to replay
       const messages = getFilteredMessages();
