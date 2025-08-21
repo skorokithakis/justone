@@ -211,13 +211,20 @@
     }
 
     // Extract the authoritative score from the message history.
-    // Algorithm:
+    // Algorithm to prevent simultaneous scoring issues:
     // 1. Find the last endRound message
     // 2. Find the last newGame message BEFORE that endRound
     // 3. Find the first endRound message AFTER that newGame
-    // This handles players joining at any point and ensures consistent scoring.
+    //
+    // Why this is necessary: When multiple players score a round simultaneously,
+    // they each send their own endRound message with potentially different scores
+    // (due to network delays or race conditions). To ensure all players have
+    // synchronized scores, we need to identify the authoritative endRound message
+    // for each game session. The first endRound after a newGame is considered
+    // authoritative, as it represents the first player to successfully score that round.
+    // This prevents score desynchronization and ensures consistency across all clients.
     function extractAuthoritativeScore() {
-      // Find the last endRound message
+      // Step 1: Find the last endRound message
       let lastEndRoundIndex = -1;
       for (let i = messageLog.length - 1; i >= 0; i--) {
         if (messageLog[i].type === 'endRound') {
@@ -231,16 +238,50 @@
         return { totalScore: 0, totalGames: 0 };
       }
 
-      // The last endRound has the most recent authoritative score
-      const lastEndRound = messageLog[lastEndRoundIndex];
-      if (lastEndRound.data) {
-        return {
-          totalScore: lastEndRound.data.totalScore !== undefined ? lastEndRound.data.totalScore : 0,
-          totalGames: lastEndRound.data.totalGames !== undefined ? lastEndRound.data.totalGames : 0
-        };
+      // Step 2: Find the last newGame message BEFORE the last endRound
+      let lastNewGameIndex = -1;
+      for (let i = lastEndRoundIndex - 1; i >= 0; i--) {
+        if (messageLog[i].type === 'newGame') {
+          lastNewGameIndex = i;
+          break;
+        }
       }
 
-      // Fallback if the endRound message doesn't have score data
+      // If no newGame found before the endRound, the endRound might be from
+      // a previous session or initial state. Use it as authoritative.
+      if (lastNewGameIndex < 0) {
+        const lastEndRound = messageLog[lastEndRoundIndex];
+        if (lastEndRound.data) {
+          return {
+            totalScore: lastEndRound.data.totalScore !== undefined ? lastEndRound.data.totalScore : 0,
+            totalGames: lastEndRound.data.totalGames !== undefined ? lastEndRound.data.totalGames : 0
+          };
+        }
+        return { totalScore: 0, totalGames: 0 };
+      }
+
+      // Step 3: Find the FIRST endRound message AFTER that newGame
+      // This is the authoritative endRound for that game session.
+      let authoritativeEndRoundIndex = -1;
+      for (let i = lastNewGameIndex + 1; i < messageLog.length; i++) {
+        if (messageLog[i].type === 'endRound') {
+          authoritativeEndRoundIndex = i;
+          break;
+        }
+      }
+
+      // If we found an authoritative endRound, use its score
+      if (authoritativeEndRoundIndex >= 0) {
+        const authoritativeEndRound = messageLog[authoritativeEndRoundIndex];
+        if (authoritativeEndRound.data) {
+          return {
+            totalScore: authoritativeEndRound.data.totalScore !== undefined ? authoritativeEndRound.data.totalScore : 0,
+            totalGames: authoritativeEndRound.data.totalGames !== undefined ? authoritativeEndRound.data.totalGames : 0
+          };
+        }
+      }
+
+      // Fallback: no endRound found after the newGame (game might still be in progress)
       return { totalScore: 0, totalGames: 0 };
     }
 
@@ -263,7 +304,8 @@
 
       // Filter messages based on rules
       const filtered = [];
-      for (let i = lastEndIndex + 1; i < messageLog.length; i++) {
+      // Start from lastEndIndex (inclusive) to include the last endRound for notification purposes
+      for (let i = Math.max(0, lastEndIndex); i < messageLog.length; i++) {
         const msg = messageLog[i];
 
         // Skip messages older than 10 minutes
