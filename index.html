@@ -423,12 +423,17 @@
               }
             }
 
-            // Clear player list for the new round
+            // Update state for the end of round
             inGame = false;
+            state.game.word = '';
+            state.network.userRole = null;
+            state.network.status = 'ENDED';
+            state.submissions = [];
             activePlayers.clear();
 
-            // Reset everything to initial state
-            resetToInitialState();
+            // Don't call resetToInitialState() here - just update state.
+            // The UI reset should only happen when we're actually ending a round,
+            // not when replaying messages.
             break;
         }
       }
