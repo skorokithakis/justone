@@ -423,24 +423,12 @@
               }
             }
 
-            // Reset game state and clear player list
+            // Clear player list for the new round
             inGame = false;
-            state.game.word = '';
-            state.network.userRole = null;
-            state.network.status = 'ENDED';
-            state.submissions = [];
             activePlayers.clear();
 
-            // Clear word display and return everyone to lobby
-            wordInner.textContent = '';
-            state.game.wordDisplay = 'hidden';
-
-            // Clean up any visual states that might persist
-            wordInner.classList.remove('blurred');
-            document.getElementById('wordText').classList.remove('word-blurred');
-            document.getElementById('clueText').classList.remove('word-blurred');
-
-            show('menu');
+            // Reset everything to initial state
+            resetToInitialState();
             break;
         }
       }
@@ -476,17 +464,8 @@
 
       // If game is ended and player isn't in menu, force them back
       if (state.network.status === 'ENDED' && state.view.current !== 'menu') {
-        // Clear any active UI states
-        if (state.game.countdownTimer) {
-          clearInterval(state.game.countdownTimer);
-          state.game.countdownTimer = null;
-        }
-
-        // Hide modals
-        submittedWordsDiv.classList.add('hidden');
-
-        // Force back to menu
-        show('menu');
+        // Reset everything to initial state when game has ended
+        resetToInitialState();
       }
     }
 
@@ -1375,16 +1354,8 @@
         });
       }
 
-      // Hide modal
-      hideScoringModal();
-
-      // Reset visual states
-      wordInner.classList.remove('blurred');
-      document.getElementById('wordText').classList.remove('word-blurred');
-      submittedWordsDiv.classList.add('hidden');
-
-      // Return to main menu (show() will call updateButtonVisibility)
-      show('menu');
+      // Reset everything to initial state
+      resetToInitialState();
     }
 
     // Skip round function - doesn't affect score or game count
@@ -1403,16 +1374,8 @@
         });
       }
 
-      // Hide modal
-      hideScoringModal();
-
-      // Reset visual states
-      wordInner.classList.remove('blurred');
-      document.getElementById('wordText').classList.remove('word-blurred');
-      submittedWordsDiv.classList.add('hidden');
-
-      // Return to main menu
-      show('menu');
+      // Reset everything to initial state
+      resetToInitialState();
     }
 
     // Scoring button handlers
@@ -1465,6 +1428,59 @@
       }
     }
 
+
+    // Centralized function to reset everything to initial state when a round ends.
+    function resetToInitialState() {
+      // Reset game state using the GameState reset method
+      state.reset();
+
+      // Clear word displays
+      wordInner.textContent = '';
+      clueInner.textContent = '';
+      clueField.value = '';
+
+      // Remove blur effects
+      wordInner.classList.remove('blurred');
+      wordText.classList.remove('word-blurred');
+
+      // Hide all views and show main menu
+      wordDisplay.classList.add('hidden');
+      clueInput.classList.add('hidden');
+      clueDisplay.classList.add('hidden');
+      submittedWordsDiv.classList.add('hidden');
+      mainMenu.classList.remove('hidden');
+
+      // Set view state to menu
+      state.view.current = 'menu';
+
+      // Clear countdown display if it exists
+      const countdownDisplay = document.getElementById('countdownDisplay');
+      if (countdownDisplay) {
+        countdownDisplay.textContent = '';
+      }
+
+      // Update history state to menu
+      history.replaceState({ view: 'menu' }, '', window.location.pathname);
+
+      // Update button visibility
+      updateButtonVisibility();
+
+      // Clear submitted words list
+      wordsList.innerHTML = '';
+      currentWordDisplay.textContent = '';
+      currentWordDisplay.classList.add('hidden');
+
+      // Hide scoring modal if visible
+      hideScoringModal();
+
+      // Exit fullscreen if active
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch(() => {});
+      }
+
+      // Update back button visibility
+      backBtn.classList.add('hidden');
+    }
 
     // Update button visibility based on user role and game state
     function updateButtonVisibility() {
