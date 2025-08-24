@@ -536,6 +536,7 @@ War
 Watch
 Wave
 Weather
+Web
 Western
 Wheat
 White
