@@ -28,9 +28,14 @@ function fitText(element, minFontSize = 20, maxFontSize = 300) {
   element.style.fontSize = high + 'px';
 }
 
-const englishWords=["Accent", "Acorn", "Aladdin", "Alarm", "Alcatraz", "Alcohol", "Alien", "Alliance", "Amazon", "America", "Anchor", "Angel", "Anniversary", "Antarctica", "Apple", "Armstrong", "Australia", "Avatar", "Baby", "Baker", "Bald", "Ball", "Ballet", "Banana", "Band", "Bar", "Barbecue", "Barbie", "Bath", "Batman", "Battery", "Beer", "Belgium", "Bellybutton", "Belt", "Berry", "Bet", "Binoculars", "Blond", "Board", "Bone", "Bonfire", "Book", "Boss", "Bottle", "Bow", "Bowling", "Boxing", "Bracelet", "Brain", "Branch", "Bread", "Bridge", "Brush", "Bubble", "Buffy", "Burrito", "Butterfly", "Button", "Cactus", "Caesar", "Cafeteria", "Cake", "Calendar", "Canada", "Candy", "Cane", "Cannon", "Canteen", "Canvas", "Carnival", "Carousel", "Carpet", "Carton", "Cartoon", "Casino", "Castle", "Cat", "Caterpillar", "Cave", "Cavity", "Cell", "Cemetery", "Cereal", "Chain", "Champagne", "Cheddar", "Cheese", "Chewbacca", "Chicken", "Chile", "Chip", "Chocolate", "Christmas", "Churchill", "Cigarette", "Cinderella", "Cinema", "Circus", "Cleopatra", "Climb", "Clover", "Club", "Cockroach", "Cocktail", "Cocoon", "Coffee", "Colonel", "Comedy", "Comforter", "Computer", "Concert", "Cookie", "Cork", "Corner", "Cougar", "Crane", "Crepe", "Crocodile", "Croissant", "Cross", "Crossroads", "Crown", "Cube", "Cup", "Cupid", "Cycle", "Dance", "Darwin", "Decathlon", "Defense", "Dentist", "Desert", "Devil", "Diamond", "Dinosaur", "Disco", "Doctor", "Doll", "Doping", "Dracula", "Drag", "Dream", "Dune", "Dwarf", "Easter", "Egg", "Elastic", "Election", "Electricity", "Elephant", "Elf", "Elvis", "Emergency", "Emperor", "End", "Evening", "Everest", "Explosion", "Facebook", "Failure", "Fair", "Fairy", "Fall", "Farm", "Fashion", "Fever", "Fire", "Firecracker", "Fireman", "Fitzgerald", "Flame", "Flash", "Flight", "Flintstone", "Flower", "Flute", "Foam", "Ford", "Forest", "Fork", "Fountain", "Fox", "France", "Frankenstein", "Friday", "Fries", "Frost", "Fur", "Galaxy", "Game", "Gandhi", "Garden", "Garlic", "Genius", "Ghost", "Giant", "Gladiator", "Glass", "Glasses", "Goal", "Godfather", "Godzilla", "Golf", "Google", "Gothic", "Grass", "Greece", "Gremlins", "Grenade", "Grotto", "Guard", "Guillotine", "Gumbo", "Hair", "Hairdresser", "Halloween", "Hammer", "Handle", "Hanukkah", "Hat", "Hazelnut", "Heart", "Heel", "Helicopter", "Helmet", "History", "Hockey", "Hole", "Hollywood", "Honey", "Hose", "Hotel", "House", "Hulk", "Human", "Humor", "Hunter", "Ice", "Ikea", "Iris", "Iron", "Island", "Israel", "Italy", "Jackson", "Jedi", "Jewelry", "Joker", "Jones", "Jungle", "Karate", "King", "Knife", "Knight", "Ladder", "Ladybug", "Lake", "Lamp", "Language", "Large", "Lava", "Lawyer", "Leaf", "Leap", "Lego", "Letter", "Light", "Lightbulb", "Lighthouse", "Lightning", "Limb", "Lion", "Lonely", "Lottery", "Machine", "Mad", "Mafia", "Magician", "Magnet", "Manual", "Manure", "Map", "Mario", "Market", "Marriage", "Mars", "Mask", "Matrix", "Melon", "Metal", "Mexico", "Mickey", "Microsoft", "Milk", "Mill", "Mirage", "Mirror", "Missile", "Monkey", "Monopoly", "Moon", "Moscow", "Mosquito", "Mountain", "Mouse", "Mouth", "Mower", "Mozart", "Mummy", "Muse", "Mushroom", "Music", "Musketeer", "Mustache", "Mustard", "Myth", "Nail", "Necklace", "Needle", "Neighborhood", "Nest", "New", "Newspaper", "Nile", "Ninja", "Nintendo", "Noodle", "Nuclear", "Number", "Nun", "Oasis", "Octopus", "Olympics", "Opera", "Operation", "Oprah", "Orange", "Oven", "Painting", "Pair", "Palace", "Pan", "Panda", "Parachute", "Paradise", "Parrot", "Passion", "Peace", "Peach", "Peanut", "Pear", "Pebble", "Penguin", "Pepper", "Perfume", "Picasso", "Pie", "Pig", "Pigeon", "Pikachu", "Pillow", "Pilot", "Pimento", "Pipe", "Pirate", "Pit", "Pizza", "Plane", "Plastic", "Playstation", "Plier", "Poison", "Poker", "Polar", "Pole", "Police", "Pony", "Pool", "Pope", "Porcelain", "Potato", "Potter", "Powder", "Pregnant", "President", "Primary", "Princess", "Prison", "Prom", "Psycho", "Pump", "Punk", "Puppet", "Purse", "Pyramid", "Radio", "Rail", "Rain", "Rake", "Ram", "Rambo", "Ramses", "Rap", "Rat", "Ray", "Reggae", "Register", "Revolution", "Ring", "Ripe", "River", "Robot", "Rock", "Rocky", "Room", "Rooster", "Root", "Rope", "Rose", "Ruler", "Rum", "Safari", "Safe", "Sahara", "Sail", "Salt", "Sand", "Sausage", "Scale", "Scene", "School", "Screw", "Series", "Sewer", "Shack", "Shakespeare", "Shark", "Sheep", "Shelf", "Shell", "Sherlock", "Ship", "Shovel", "Shower", "Shrek", "Shrimp", "Simpson", "Siren", "Ski", "Sleeve", "Slipper", "Smoke", "Snake", "Snow", "Soap", "Sock", "Socket", "Sofa", "Sombrero", "Song", "Spartacus", "Spear", "Spice", "Spielberg", "Spy", "Stallion", "Star", "Starbucks", "Stark", "Station", "Stew", "Sting", "Stone", "Straw", "Strawberry", "String", "Study", "Stuffing", "Subway", "Sugar", "Sun", "Switzerland", "Sword", "Syrup", "Tango", "Tarantino", "Tarzan", "Tattoo", "Taxi", "Temple", "Tennis", "Terminator", "Theater", "Thought", "Thread", "Throat", "Thunder", "Ticket", "Tie", "Tiger", "Titanic", "Tobacco", "Tokyo", "Tolkien", "Tomato", "Tool", "Tornado", "Towel", "Tower", "Tradition", "Train", "Treasure", "Triangle", "Troy", "Truce", "Tube", "Tulip", "Tuna", "Tunnel", "Umbrella", "Unicorn", "Uniform", "Vacation", "Vampire", "Vegas", "Vegetable", "Vengeance", "Venus", "Viking", "Violin", "Virus", "Volcano", "Waltz", "War", "Watch", "Wave", "Weather", "Western", "Wheat", "White", "Widowmaker", "Wind", "Window", "Wine", "Wolf", "Yellow", "Zeus", "Zombie", "Zoo"];
+// Language configuration with names and codes.
+const languages = [
+  { name: 'English', code: 'en' },
+  { name: 'Greek', code: 'el' }
+];
 
-const greekWords= [ "Προφορά", "Βελανίδι", "Αλαντίν", "Συναγερμός", "Αλκατράζ", "Αλκοόλ", "Εξωγήινος", "Συμμαχία", "Αμαζόνιος", "Ελλάδα", "Άγκυρα", "Άγγελος", "Επέτειος", "Ανταρκτική", "Μήλο", "Armstrong", "Αυστραλία", "Avatar", "Μωρό", "Αρτοποιός", "Φαλακρός", "Μπάλα", "Μπαλέτο", "Μπανάνα", "Συγκρότημα", "Μπαρ", "Μπάρμπεκιου", "Μπάρμπι", "Μπάνιο", "Μπάτμαν", "Μπαταρία", "Μπύρα", "Βέλγιο", "Αφαλός", "Ζώνη", "Βατόμουρο", "Στοίχημα", "Κυάλια", "Ξανθός", "Σανίδα", "Κόκκαλο", "Φωτιά", "Βιβλίο", "Αφεντικό", "Μπουκάλι", "Φιόγκος", "Μπόουλινγκ", "Μποξ", "Βραχιόλι", "Εγκέφαλος", "Κλαδί", "Ψωμί", "Γέφυρα", "Βούρτσα", "Φούσκα", "Βουγιουκλάκη", "Φασόλια", "Πεταλούδα", "Κουμπί", "Κάκτος", "Καίσαρας", "Καφετέρια", "Τούρτα", "Ημερολόγιο", "Καναδάς", "Καραμέλα", "Μπαστούνι", "Κανόνι", "Καντίνα", "Καμβάς", "Καρναβάλι", "Συγκρουόμενα", "Χαλί", "Χαρτόνι", "Καρτούν", "Καζίνο", "Κάστρο", "Γάτα", "Σαρανταποδαρούσα", "Σπηλιά", "Κουφάλα", "Κελί", "Νεκροταφείο", "Δημητριακά", "Αλυσίδα", "Σαμπάνια", "Τσένταρ", "Τυρί", "Chewbacca", "Κοτόπουλο", "Ιταλία", "Πατατάκι", "Σοκολάτα", "Χριστούγεννα", "Παπανδρέου", "Τσιγάρο", "Σταχτομπούτα", "Κινηματογράφος", "Τσίρκο", "Κλεοπάτρα", "Αναρρίχηση", "Τριφύλλι", "Ρόπαλο", "Κατσαρίδα", "Κοκτέιλ", "Κουκούλι", "Καφές", "Συνταγματάρχης", "Κωμωδία", "Πάπλωμα", "Υπολογιστής", "Συναυλία", "Μπισκότο", "Φελλός", "Γωνία", "Cougar", "Γερανός", "Κρέπα", "Κροκόδειλος", "Κρουασάν", "Σταυρός", "Σταυροδρόμι", "Κορώνα", "Κύβος", "Κούπα", "Έρως", "Κύκλος", "Χορός", "Δαρβίνος", "Δέκαθλο", "Άμυνα", "Οδοντίατρος", "Έρημος", "Διάβολος", "Διαμάντι", "Δεινόσαυρος", "Ντίσκο", "Γιατρός", "Κούκλα", "Doping", "Δράκουλας", "Drag", "Όνειρο", "Dune", "Νάνος", "Πάσχα", "Αυγό", "Ελαστικός", "Εκλογές", "Ηλεκτρισμός", "Ελέφαντας", "Ξωτικό", "Elvis", "Emergency", "Αυτοκράτορας", "Τέλος", "Απόγευμα", "Έβερεστ", "Έκρηξη", "Facebook", "Αποτυχία", "Πανηγύρι", "Νεράιδα", "Φθινόπωρο", "Χωράφι", "Μόδα", "Πυρετός", "Φωτιά", "Πυροτέχνημα", "Πυροσβέστης", "Fitzgerald", "Φλόγα", "Αστραπή", "Πτήση", "Flintstone", "Λουλούδι", "Φλάουτο", "Αφρός", "Ford", "Δάσος", "Πηρούνι", "Σιντριβάνι", "Αλεπού", "Γαλλία", "Φρανκενστάιν", "Παρασκευή", "Πατάτες", "Παγωνιά", "Γούνα", "Γαλαξίας", "Παιχνίδι", "Γκάντι", "Κήπος", "Σκόρδο", "Ιδιοφυΐα", "Φάντασμα", "Γίγαντας", "Μονομάχος", "Γυαλί", "Γυαλιά", "Στόχος", "Νονός", "Γκοτζίλα", "Γκολφ", "Google", "Gothic", "Γρασίδι", "Ελλάδα", "Gremlins", "Χειροβομβίδα", "Κιόσκι", "Φρουρός", "Γκιλοτίνα", "Gumbo", "Μαλλιά", "Κομμωτής", "Απόκριες", "Σφυρί", "Χερούλι", "Hanukkah", "Καπέλο", "Φουντούκι", "Καρδιά", "Φτέρνα", "Ελικόπτερο", "Κράνος", "Ιστορία", "Χόκει", "Τρύπα", "Χόλιγουντ", "Μέλι", "Λάστιχο", "Ξενοδοχείο", "Σπίτι", "Χουλκ", "Άνθρωπος", "Χιούμορ", "Κυνηγός", "Πάγος", "ΙΚΕΑ", "Ίριδα", "Σίδερο", "Νησί", "Ισραήλ", "Ιταλία", "Τζάκσον", "Τζεντάι", "Κοσμήματα", "Τζόκερ", "Καραγκιόζης", "Ζούγκλα", "Καράτε", "Βασιλιάς", "Μαχαίρι", "Ιππότης", "Σκάλα", "Πασχαλίτσα", "Λίμνη", "Λυχνάρι", "Γλώσσα", "Μεγάλος", "Λάβα", "Δικηγόρος", "Φύλλο", "Άλμα", "Λέγκο", "Γράμμα", "Φως", "Γλόμπος", "Φάρος", "Κεραυνός", "Άκρο", "Λιοντάρι", "Μόνος", "Λαχείο", "Μηχανή", "Τρελός", "Μαφία", "Μάγος", "Μαγνήτης", "Εγχειρίδιο", "Κοπριά", "Χάρτης", "Μάριο", "Αγορά", "Γάμος", "Άρης", "Μάσκα", "Μάτριξ", "Πεπόνι", "Μέταλλο", "Μεξικό", "Μίκι", "Microsoft", "Γάλα", "Μύλος", "Οφθαλμαπάτη", "Καθρέφτης", "Πύραυλος", "Μαΐμού", "Μονόπολη", "Φεγγάρι", "Μόσχα", "Κουνούπι", "Βουνό", "Ποντίκι", "Στόμα", "Χορτοκοπτικό", "Μότσαρτ", "Μούμια", "Μούσα", "Μανιτάρι", "Μουσική", "Σωματοφύλακας", "Μουστάκι", "Μουστάρδα", "Μύθος", "Νύχι", "Κολιέ", "Βελόνα", "Γειτονιά", "Φωλιά", "Νέος", "Εφημερίδα", "Νείλος", "Νίντζα", "Nintendo", "Νούντλ", "Πυρηνικός", "Αριθμός", "Καλόγρια", "Όαση", "Χταπόδι", "Ολυμπιακοί", "Όπερα", "Επέμβαση", "Όπρα", "Πορτοκάλι", "Φούρνος", "Πίνακας", "Ζευγάρι", "Παλάτι", "Τηγάνι", "Πάντα", "Αλεξίπτωτο", "Παράδεισος", "Παπαγάλος", "Πάθος", "Ειρήνη", "Ροδάκινο", "Φυστίκι", "Αχλάδι", "Βότσαλο", "Πιγκουΐνος", "Πιπέρι", "Άρωμα", "Πικάσο", "Πίτα", "Γουρούνι", "Περιστέρι", "Πίκατσου", "Μαξιλάρι", "Πιλότος", "Πιπεριά", "Σωλήνας", "Πειρατής", "Λάκκος", "Πίτσα", "Αεροπλάνο", "Πλαστικό", "Playstation", "Τανάλια", "Δηλητήριο", "Πόκερ", "Πολικός", "Πόλος", "Αστυνομία", "Πόνι", "Πισίνα", "Πάπας", "Πορσελάνη", "Πατάτα", "Πότερ", "Σκόνη", "Έγκυος", "Πρόεδρος", "Πρώτος", "Πριγκίπισσα", "Φυλακή", "Πανηγύρι", "Ψυχασθενής", "Αντλία", "Πανκ", "Μαριονέτα", "Τσάντα", "Πυραμίδα", "Ράδιο", "Σιδηρόδρομος", "Βροχή", "Τσουγκράνα", "Κριάρι", "Ράμπο", "Ραμσής", "Ραπ", "Αρουραίος", "Ακτίνα", "Ρέγκε", "Ταμείο", "Επανάσταση", "Δαχτυλίδι", "Ώριμος", "Ποτάμι", "Ρομπότ", "Πέτρα", "Ρόκι", "Δωμάτιο", "Κόκορας", "Ρίζα", "Σχοινί", "Τριαντάφυλλο", "Χάρακας", "Ρούμι", "Σαφάρι", "Χρηματοκιβώτιο", "Σαχάρα", "Sail", "Αλάτι", "Άμμος", "Λουκάνικο", "Ζυγαριά", "Σκηνή", "Σχολείο", "Βίδα", "Σειρά", "Υπόνομος", "Παράγκα", "Σέξπιρ", "Καρχαρίας", "Πρόβατο", "Ράφι", "Κοχύλι", "Σέρλοκ", "Πλοίο", "Φτυάρι", "Ντους", "Σρεκ", "Γαρίδα", "Simpson", "Σειρήνα", "Σκι", "Μανίκι", "Παντόφλα", "Καπνός", "Φίδι", "Χιόνι", "Σαπούνι", "Κάλτσα", "Πρίζα", "Καναπές", "Τραγιάσκα", "Τραγούδι", "Οδυσσέας", "Ακόντιο", "Καρύκευμα", "Λάνθιμος", "Κατάσκοπος", "Τράγος", "Αστέρι", "Goody's", "Μπουφές", "Σταθμός", "Ντολμάδες", "Κεντρί", "Πέτρα", "Καλαμάκι", "Φράουλα", "Κλωστή", "Γραφείο", "Γέμιση", "Υπόγειος", "Ζάχαρη", "Ήλιος", "Ελβετία", "Σπαθί", "Σιρόπι", "Τανγκό", "Ταραντίνο", "Ταρζάν", "Τατού", "Ταξί", "Ναός", "Τένις", "Ταξιτζής", "Θέατρο", "Σκέψη", "Νήμα", "Λαιμός", "Κεραυνός", "Εισιτήριο", "Γραβάτα", "Τίγρη", "Τιτανικός", "Καπνός", "Τόκιο", "Tolkien", "Ντομάτα", "Εργαλείο", "Κυκλώνας", "Πετσέτα", "Πύργος", "Παράδοση", "Τραίνο", "Θησαυρός", "Τρίγωνο", "Τροία", "Ανακωχή", "Σωλήνας", "Τουλίπα", "Τόνος", "Τούνελ", "Ομπρέλα", "Μονόκερως", "Στολή", "Διακοπές", "Βαμπίρ", "Βέγκας", "Λαχανικό", "Εκδίκηση", "Αφροδίτη", "Βίκινγκ", "Βιολί", "Ιός", "Ηφαίστειο", "Βαλς", "Πόλεμος", "Ρολόι", "Κύμα", "Καιρός", "Γουέστερν", "Σιτάρι", "Άσπρος", "Widowmaker", "Άνεμος", "Παράθυρο", "Κρασί", "Λύκος", "Κίτρινο", "Δίας", "Ζόμπι", "Μπιλιάρδο" ]
+// Object to store loaded wordlists.
+const wordlists = {};
 
 // Seeded random number generator using mulberry32.
 function seededRandom(seed) {
@@ -81,6 +86,62 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Use unified GameState from game.js
   const state = window.GameState;
+
+  // Function to load wordlist from file.
+  async function loadWordlist(language_code) {
+    try {
+      const response = await fetch(`./words/${language_code}.txt`);
+      if (!response.ok) {
+        throw new Error(`Failed to load wordlist for ${language_code}: ${response.status}`);
+      }
+      const text = await response.text();
+      // Split by newlines and filter out empty lines.
+      return text.split('\n').filter(word => word.trim().length > 0);
+    } catch (error) {
+      console.error(`Error loading wordlist for ${language_code}:`, error);
+      return [];
+    }
+  }
+
+  // Load all wordlists and create language picker.
+  async function initializeLanguages() {
+    const langPicker = document.getElementById('langPicker');
+
+    // Load wordlists for all languages.
+    for (const language of languages) {
+      wordlists[language.code] = await loadWordlist(language.code);
+      console.log(`Loaded ${wordlists[language.code].length} words for ${language.name}`);
+    }
+
+    // Generate radio buttons for each language.
+    languages.forEach((language, index) => {
+      const label = document.createElement('label');
+      const radio = document.createElement('input');
+      radio.type = 'radio';
+      radio.name = 'lang';
+      radio.value = language.code;
+      if (index === 0) {
+        radio.checked = true; // First language is default.
+        state.game.language = language.code;
+      }
+      label.appendChild(radio);
+      label.appendChild(document.createTextNode(' ' + language.name));
+      langPicker.appendChild(label);
+    });
+
+    // Add event listeners to language radio buttons.
+    document.querySelectorAll('[name="lang"]').forEach(radio => {
+      radio.addEventListener('change', (e) => {
+        if (e.target.checked) {
+          state.game.language = e.target.value;
+          console.log('Language changed to:', state.game.language);
+        }
+      });
+    });
+  }
+
+  // Initialize languages on load.
+  initializeLanguages();
 
   // Reconnection state for exponential backoff
   let reconnectAttempt = 0;
@@ -381,12 +442,7 @@ document.addEventListener('DOMContentLoaded', () => {
     return true; // Message was added
   }
 
-  // Language picker
-  document.querySelectorAll('[name="lang"]').forEach(radio => {
-    radio.addEventListener('change', e => {
-      state.game.language = e.target.value;
-    });
-  });
+  // Language picker is handled in initializeLanguages() function.
 
   // Maximum Levenshtein distance to consider (configurable)
   const MAX_DISTANCE = 2;
@@ -1403,7 +1459,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btnWord').onclick = () => {
     // In offline mode, always allow getting a new word
     if (state.network.status === "OFFLINE") {
-      const pool = state.game.language === 'en' ? englishWords : greekWords;
+      const pool = wordlists[state.game.language] || [];
       // For offline mode, just pick randomly.
       state.game.word = pool[Math.floor(Math.random() * pool.length)];
 
@@ -1449,7 +1505,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Start a new game
-    const pool = state.game.language === 'en' ? englishWords : greekWords;
+    const pool = wordlists[state.game.language] || [];
     // Use room code as seed for deterministic shuffling.
     const seed = stringToSeed(state.network.roomCode.toUpperCase());
     const shuffled = shuffleArray(pool, seed);
