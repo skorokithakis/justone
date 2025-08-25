@@ -3,6 +3,7 @@ const GameState = {
   // Core game state
   game: {
     word: '',           // Current word being guessed
+    wordHolderUsername: '', // Username of the player who has the word
     language: 'en',     // Selected language
     wordDisplay: 'hidden', // 'hidden', 'countdown', 'visible', 'blurred'
     wordIndex: 0,       // Current index in the shuffled word list
@@ -65,6 +66,7 @@ const GameState = {
   reset() {
     // Reset game state
     this.game.word = '';
+    this.game.wordHolderUsername = '';
     this.game.wordDisplay = 'hidden';
     // Don't reset wordIndex - it persists for the room session.
     if (this.game.countdownTimer) {

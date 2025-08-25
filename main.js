@@ -319,6 +319,7 @@ document.addEventListener('DOMContentLoaded', () => {
           }
 
           state.game.word = gameWord;
+          state.game.wordHolderUsername = msg.data.username || 'Anonymous';
           state.game.language = gameLang;
           state.network.status = 'IN_PROGRESS';
 
@@ -1081,6 +1082,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // Show the word display
     currentWordDisplay.classList.remove('hidden');
     currentWordDisplay.textContent = state.game.word ? `Word: ${state.game.word}` : '';
+    // Update the label to show the word holder's name.
+    if (state.game.wordHolderUsername) {
+      currentWordDisplay.setAttribute('data-label', `TARGET WORD (${state.game.wordHolderUsername})`);
+    } else {
+      currentWordDisplay.setAttribute('data-label', 'TARGET WORD');
+    }
 
     // Clear and rebuild the list
     wordsList.innerHTML = '';
@@ -1418,6 +1425,7 @@ document.addEventListener('DOMContentLoaded', () => {
     wordsList.innerHTML = '';
     currentWordDisplay.textContent = '';
     currentWordDisplay.classList.add('hidden');
+    currentWordDisplay.setAttribute('data-label', 'TARGET WORD');
 
     // Hide scoring modal if visible
     hideScoringModal();

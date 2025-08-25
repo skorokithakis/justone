@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Insert a word into a sorted wordlist file."""
+
 import sys
 from pathlib import Path
 

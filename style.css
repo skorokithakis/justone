@@ -625,7 +625,7 @@ button.disabled {
 }
 
 #currentWordDisplay::before {
-  content: "TARGET WORD";
+  content: attr(data-label);
   position: absolute;
   top: -12px;
   left: 50%;
