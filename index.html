@@ -65,6 +65,7 @@
 
     <div id="roomModal" class="hidden">
       <div class="modal-content">
+        <button id="rulesBtn" class="rules-button" title="Rules of the game">?</button>
         <h2>Join Room</h2>
         <input type="text" id="nameInput" placeholder="Your name" maxlength="20" style="margin-bottom: 1rem;">
         <input type="text" id="roomCodeInput" placeholder="Room code (ABCD)" maxlength="4" pattern="[A-Za-z]{4}">
@@ -106,6 +107,42 @@
         </div>
         <button id="skipRoundBtn" class="skip-btn">Skip Round<br><span class="score-value">(not counted)</span></button>
         <button id="cancelScoringBtn" class="cancel-btn">Cancel</button>
+      </div>
+    </div>
+
+    <div id="rulesModal" class="modal hidden">
+      <div class="modal-content">
+        <h2>How to Play Just One</h2>
+        <button class="modal-close" id="closeRulesBtn">✕</button>
+        <div class="rules-content">
+          <h3>Objective</h3>
+          <p>Cooperative party game where players work together to help one player guess mystery words using one-word clues.</p>
+
+          <h3>How to Play</h3>
+          <ol>
+            <li><strong>Word Holder:</strong> One player clicks "Get Word" to see the mystery word</li>
+            <li><strong>Clue Givers:</strong> Other players click "Type Clue" and enter one-word clues</li>
+            <li><strong>Review:</strong> All clues appear in a list. Identical/invalid clues are highlighted red and must be rejected (not shown to the word holder)</li>
+            <li><strong>Show Clue:</strong> Click "Show Clue" to display your clue to the word holder</li>
+            <li><strong>Guess:</strong> Word holder makes ONE guess based on visible clues</li>
+            <li><strong>Score:</strong> Click "End Round" and select: ✓ Correct (+1), → Pass (0), ✗ Fail (-1) based on whether they guessed right, passed, or guessed wrong</li>
+          </ol>
+
+          <h3>Invalid Clues (Cancelled)</h3>
+          <ul>
+            <li>Identical clues (including word families, plurals, gender variants)</li>
+            <li>The mystery word in different spelling or language</li>
+            <li>Words from the same family as the mystery word</li>
+            <li>Invented words or phonetically identical words</li>
+          </ul>
+
+          <h3>App Features</h3>
+          <ul>
+            <li><strong>Online:</strong> Share room code to play with friends</li>
+            <li><strong>Offline:</strong> Pass device around for local play</li>
+            <li><strong>Hold to Blur:</strong> Temporarily hide word on word screen</li>
+          </ul>
+        </div>
       </div>
     </div>
   </div>

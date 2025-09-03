@@ -652,6 +652,37 @@ document.addEventListener('DOMContentLoaded', () => {
     reconnectAttempt = 0;
   });
 
+  // Rules modal functionality
+  const rulesModal = document.getElementById('rulesModal');
+  const rulesBtn = document.getElementById('rulesBtn');
+  const closeRulesBtn = document.getElementById('closeRulesBtn');
+
+  // Show rules modal
+  rulesBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    rulesModal.classList.remove('hidden');
+  });
+
+  // Close rules modal
+  closeRulesBtn.addEventListener('click', () => {
+    rulesModal.classList.add('hidden');
+  });
+
+  // Close modal when clicking outside
+  rulesModal.addEventListener('click', (e) => {
+    if (e.target === rulesModal) {
+      rulesModal.classList.add('hidden');
+    }
+  });
+
+  // Close rules modal with Escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !rulesModal.classList.contains('hidden')) {
+      rulesModal.classList.add('hidden');
+    }
+  });
+
   // Connect to room
   function connectToRoom(code) {
     state.network.roomCode = code;

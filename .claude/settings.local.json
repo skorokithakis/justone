@@ -4,7 +4,12 @@
       "Bash(rm:*)",
       "Bash(grep:*)",
       "Bash(pre-commit run:*)",
-      "Bash(jj describe:*)"
+      "Bash(jj describe:*)",
+      "Bash(jj diff:*)",
+      "mcp__playwright__browser_navigate",
+      "mcp__playwright__browser_click",
+      "mcp__playwright__browser_evaluate",
+      "mcp__playwright__browser_take_screenshot"
     ],
     "deny": []
   }
