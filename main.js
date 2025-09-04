@@ -1,3 +1,61 @@
+// Wake Lock Service
+const WakeLockService = {
+  wakeLock: null,
+  isSupported: 'wakeLock' in navigator,
+
+  async request() {
+    if (!this.isSupported) {
+      console.log('[WakeLock] Wake Lock API not supported');
+      return false;
+    }
+
+    try {
+      if (this.wakeLock) {
+        console.log('[WakeLock] Wake lock already active');
+        return true;
+      }
+
+      this.wakeLock = await navigator.wakeLock.request('screen');
+      console.log('[WakeLock] Screen wake lock activated');
+
+      this.wakeLock.addEventListener('release', () => {
+        console.log('[WakeLock] Screen wake lock released');
+        this.wakeLock = null;
+      });
+
+      return true;
+    } catch (err) {
+      console.error('[WakeLock] Failed to request wake lock:', err);
+      return false;
+    }
+  },
+
+  async release() {
+    if (this.wakeLock) {
+      try {
+        await this.wakeLock.release();
+        console.log('[WakeLock] Wake lock manually released');
+      } catch (err) {
+        console.error('[WakeLock] Failed to release wake lock:', err);
+      }
+      this.wakeLock = null;
+    }
+  },
+
+  // Re-request wake lock when page becomes visible (handles automatic release on page hide)
+  async handleVisibilityChange() {
+    if (document.visibilityState === 'visible' && this.shouldHaveWakeLock()) {
+      await this.request();
+    }
+  },
+
+  // Determine if wake lock should be active based on current view
+  shouldHaveWakeLock() {
+    const state = window.GameState;
+    return state.view.current === 'word' || state.view.current === 'clue';
+  }
+};
+
 // Dynamic text scaling function (FitText.js-like)
 function fitText(element, minFontSize = 20, maxFontSize = 300) {
   if (!element || !element.textContent.trim()) return;
@@ -1389,10 +1447,22 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     switch(view) {
-      case 'menu': mainMenu.classList.remove('hidden'); break;
-      case 'word': wordDisplay.classList.remove('hidden'); break;
+      case 'menu':
+        mainMenu.classList.remove('hidden');
+        // Release wake lock when returning to menu
+        WakeLockService.release();
+        break;
+      case 'word':
+        wordDisplay.classList.remove('hidden');
+        // Request wake lock when showing word
+        WakeLockService.request();
+        break;
       case 'clueIn': clueInput.classList.remove('hidden'); break;
-      case 'clue': clueDisplay.classList.remove('hidden'); break;
+      case 'clue':
+        clueDisplay.classList.remove('hidden');
+        // Request wake lock when showing clue
+        WakeLockService.request();
+        break;
     }
     state.view.current = view;
 
@@ -1439,6 +1509,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Set view state to menu
     state.view.current = 'menu';
+
+    // Release wake lock when resetting to menu
+    WakeLockService.release();
 
     // Clear countdown display if it exists
     const countdownDisplay = document.getElementById('countdownDisplay');
@@ -1963,6 +2036,11 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('fullscreenchange', updateFSIcon);
     updateFSIcon();
   }
+
+  // Handle page visibility changes for wake lock
+  document.addEventListener('visibilitychange', () => {
+    WakeLockService.handleVisibilityChange();
+  });
 
   // Confirmation when navigating away during active game
   window.addEventListener('beforeunload', (e) => {
